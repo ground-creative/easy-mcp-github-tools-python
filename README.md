@@ -3,14 +3,11 @@
 This is a set of tools for github to be used with easy mcp server.<br>
 https://github.com/ground-creative/easy-mcp-python
 
-## Capabilities
+## Repository Capabilities
 
-- List items in drive folders
-- Get items detailed info by id or name
-- Read/Create/Edit documents
-- Read/Create/Edit spreadsheets
-- Delete items
-- Move items to other folders
+- Get Commits
+- Get Commit Details
+- Get Files Details
 
 ## Authentication
 
