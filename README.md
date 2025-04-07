@@ -17,7 +17,7 @@ https://github.com/ground-creative/easy-mcp-python
 This application uses github oauth service to authenticate the user.<br>
 By going to /auth/login page you can authenticate with github and get an access token.
 
-### How To Authenticate
+How To Authenticate:
 
 1. Go to auth/login and authenticate
 
