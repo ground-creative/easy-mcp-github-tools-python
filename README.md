@@ -12,6 +12,11 @@ https://github.com/ground-creative/easy-mcp-python
 - Delete items
 - Move items to other folders
 
+## Authentication
+
+This application uses github oauth service to authenticate the user.<br>
+By going to /auth/login page you can authenticate with github and get an access token.
+
 ## Installation
 
 1. Clone the repository from the root folder of the easy mcp installation:
@@ -44,7 +49,14 @@ SITE_URL=Main Application Site URL
 SITE_NAME=MAin Application Site Name
 ```
 
-5. Add `client_secrets.json` in storage folder
+5. Create json file `client_credentials.json` with github oauth credentials in storage folder:
+
+```
+{
+    "client_id": "XXXXX",
+    "client_secret": "XXXXXXX"
+}
+```
 
 6. Run the server:
 
