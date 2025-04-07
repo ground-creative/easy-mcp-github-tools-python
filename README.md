@@ -1,6 +1,6 @@
 # Eeasy MCP Github Tools
 
-This is a set of tools for gdrive to be used with easy mcp server.<br>
+This is a set of tools for github to be used with easy mcp server.<br>
 https://github.com/ground-creative/easy-mcp-python
 
 ## Capabilities
@@ -17,7 +17,7 @@ https://github.com/ground-creative/easy-mcp-python
 1. Clone the repository from the root folder of the easy mcp installation:
 
 ```
-git clone https://github.com/ground-creative/easy-mcp-gdrive-tools-python.git app
+git clone https://github.com/ground-creative/easy-mcp-github-tools-python.git app
 ```
 
 2. Install requirements:
@@ -35,9 +35,13 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 4. Add parameters to env file:
 
 ```
-APP_HOST=http://localhost:8000
+APP_HOST=Application Host ex: `https://mcp.yourdomain.com`
 DB_PATH=storage/sqlite_credentials.db
 CYPHER=Your Encryption Key Here
+
+# Optional
+SITE_URL=Main Application Site URL
+SITE_NAME=MAin Application Site Name
 ```
 
 5. Add `client_secrets.json` in storage folder
