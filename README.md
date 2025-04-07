@@ -5,9 +5,9 @@ https://github.com/ground-creative/easy-mcp-python
 
 ## Repository Capabilities
 
-- Get Commits
-- Get Commit Details
-- Get Files Details
+- Fetch commit history from a GitHub repository.
+- Fetch details for multiple files from a GitHub repository.
+- Fetch detailed information for a specific commit from a GitHub repository.
 
 ## Authentication
 
