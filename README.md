@@ -1,9 +1,9 @@
-# Eeasy MCP Github Tools
+# Eeasy MCP GitHub Tools
 
 This is a set of tools for github to be used with easy mcp server.<br>
 https://github.com/ground-creative/easy-mcp-python
 
-## Repository Capabilities
+## Capabilities
 
 - Fetch commit history from a GitHub repository.
 - Fetch details for multiple files from a GitHub repository.
@@ -51,7 +51,7 @@ SITE_URL=Main Application Site URL
 SITE_NAME=MAin Application Site Name
 ```
 
-5. Create json file `client_credentials.json` with github oauth credentials in storage folder:
+5. Create json file `client_credentials.json` with GitHub oauth credentials in storage folder:
 
 ```
 {
