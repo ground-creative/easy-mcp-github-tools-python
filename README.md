@@ -14,7 +14,7 @@ https://github.com/ground-creative/easy-mcp-python
 
 ## Authentication
 
-This application uses github oauth service to authenticate the user.
+This application uses GitHub oAuth service to authenticate the user.
 
 How To Authenticate:
 
