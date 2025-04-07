@@ -17,6 +17,12 @@ https://github.com/ground-creative/easy-mcp-python
 This application uses github oauth service to authenticate the user.<br>
 By going to /auth/login page you can authenticate with github and get an access token.
 
+### How To Authenticate
+
+1. Go to auth/login and authenticate
+
+2. Use the paramater X-ACCESS-TOKEN with the request headers when making calls to the server.
+
 ## Installation
 
 1. Clone the repository from the root folder of the easy mcp installation:
@@ -64,9 +70,3 @@ SITE_NAME=MAin Application Site Name
 # Run via fastapi wrapper
 python3 run.py -s fastapi
 ```
-
-## How To Authenticate
-
-1. Go to auth/login and authenticate
-
-2. Use the paramater X-ACCESS-TOKEN with the request headers when making calls to the server.
