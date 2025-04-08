@@ -141,6 +141,10 @@ X-REPO: owner/repo
 
 The server info page with the tools specs is located at APP_HOST URL configured in the .env file.
 
-markdown
-![Description of the image](screenshots/1.png)
-![Description of the image](screenshots/2.png)
+# Screenshots
+
+Server info page:
+![Server info page](screenshots/1.png)
+
+User authenticated page
+![User Aunthenticated page](screenshots/2.png)
