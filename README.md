@@ -3,12 +3,6 @@
 This is a set of tools for github to be used with easy mcp server.<br>
 https://github.com/ground-creative/easy-mcp-python
 
-## Capabilities
-
-- Fetch commit history from a GitHub repository.
-- Fetch details for multiple files from a GitHub repository.
-- Fetch detailed information for a specific commit from a GitHub repository.
-
 ## Authentication
 
 This application uses GitHub oAuth service to authenticate the user.
@@ -109,5 +103,7 @@ python3 run.py -s fastapi
 \* The `repo` parameter is optional, it can be directy included in the request headers:
 
 ```
+# Make sure to instruct the llm to ignore repo parameter when making requests.
+
 X-REPO: owner/repo
 ```
