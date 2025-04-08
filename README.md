@@ -146,7 +146,7 @@ The server info page with the tools specs is the {APP_HOST} parameter configured
 Server info page:
 ![Server info page](screenshots/1.png)
 
-GitHub oAuth page
+GitHub application oAuth page
 ![GitHub oAuth page](screenshots/3.png)
 
 User authenticated page
