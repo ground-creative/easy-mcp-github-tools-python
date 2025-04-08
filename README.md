@@ -3,16 +3,6 @@
 This is a set of tools for github to be used with easy mcp server.<br>
 https://github.com/ground-creative/easy-mcp-python
 
-## Authentication
-
-This application uses GitHub oAuth service to authenticate the user.
-
-How To Authenticate:
-
-1. Go to auth/login and authenticate
-
-2. Use the paramater X-ACCESS-TOKEN with the request headers when making calls to the server.
-
 ## Installation
 
 1. Clone the repository from the root folder of the easy mcp installation:
@@ -61,7 +51,20 @@ SITE_NAME=MAin Application Site Name
 python3 run.py -s fastapi
 ```
 
-## Tools
+## Authentication
+
+This application uses GitHub oAuth service to authenticate the user.<br>
+To use this app, you must create an OAuth application on GitHub.
+
+How To Authenticate:
+
+1. Go to auth/login and authenticate
+
+2. Use the paramater X-ACCESS-TOKEN with the request headers when making calls to the server.
+
+## Available MCP Tools
+
+This MCP server provides the following tools:
 
 | Tool Name                 | Description                                                                                  | Parameters Required                                                                                                                                                                                                                                                            |
 | ------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
