@@ -12,7 +12,7 @@ https://github.com/ground-creative/easy-mcp-python
 - **Pull Requests**: Create and manage pull requests, including merging them into target branches.
 - **Global Search**: Perform global searches across GitHub for repositories, issues, and code.
 - **Release Management**: Retrieve and manage releases within your GitHub repositories.
-- **OAuth Authentication**: Securely authenticate users using GitHub's OAuth service, ensuring safe access to repository data.
+- **OAuth Authentication**: Securely authenticate users using GitHub's OAuth service.
 
 ## Installation
 
