@@ -64,7 +64,7 @@ How To Authenticate:
 
 2. Use the paramater X-ACCESS-TOKEN with the request headers when making calls to the server.
 
-## Create GitHub Application instructions
+## Create GitHub Application Instructions
 
 To use this app, you must first create an OAuth application on GitHub. Follow these steps:
 
