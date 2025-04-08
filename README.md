@@ -136,3 +136,11 @@ This MCP server provides the following tools:
 
 X-REPO: owner/repo
 ```
+
+# Server Info Page
+
+The server info page with the tools specs is located at APP_HOST URL configured in the .env file.
+
+markdown
+![Description of the image](screenshots/1.png)
+![Description of the image](screenshots/2.png)
