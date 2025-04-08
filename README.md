@@ -3,6 +3,17 @@
 This is a set of tools for github to be used with easy mcp server.<br>
 https://github.com/ground-creative/easy-mcp-python
 
+## Key Features
+
+- **Branch Management**: Easily create and delete branches in your GitHub repositories.
+- **Issue Tracking**: Create, update, and delete issues, as well as manage comments on issues.
+- **Commit History**: Fetch detailed commit information and commit history for any branch in your repository.
+- **File Management**: Create, update, and delete files within your GitHub repositories, including fetching file contents and differences.
+- **Pull Requests**: Create and manage pull requests, including merging them into target branches.
+- **Global Search**: Perform global searches across GitHub for repositories, issues, and code.
+- **Release Management**: Retrieve and manage releases within your GitHub repositories.
+- **OAuth Authentication**: Securely authenticate users using GitHub's OAuth service, ensuring safe access to repository data.
+
 ## Installation
 
 1. Clone the repository from the root folder of the easy mcp installation:
