@@ -38,6 +38,8 @@ SITE_NAME=MAin Application Site Name
 5. Create json file `client_credentials.json` with GitHub oauth credentials in storage folder:
 
 ```
+# Follow instructions of section "Create GitHub Application instructions" to create credentials
+
 {
     "client_id": "XXXXX",
     "client_secret": "XXXXXXX"
@@ -61,6 +63,18 @@ How To Authenticate:
 1. Go to auth/login and authenticate
 
 2. Use the paramater X-ACCESS-TOKEN with the request headers when making calls to the server.
+
+## Create GitHub Application instructions
+
+- To use this app, you must first create an OAuth application on GitHub. Follow these steps:
+  1. Go to your GitHub account settings.
+  2. Navigate to **Developer settings** > **OAuth Apps**.
+  3. Click on **New OAuth App**.
+  4. Fill in the required fields:
+  - **Application Name**: Choose a name for your application.
+  - **Homepage URL**: Enter the main URL of your application (e.g., `https://mcp.yourdomain.com`).
+  - **Authorization callback URL**: Set this to `http://{Your Host}:{Your Port}/auth/callback`.
+  5. After creating the application, you will receive a **Client ID** and **Client Secret**. Keep these credentials safe, as you will need them for authentication.
 
 ## Available MCP Tools
 
