@@ -139,7 +139,7 @@ X-REPO: owner/repo
 
 # Server Info Page
 
-The server info page with the tools specs is the {APP_HOST} parameter configured in the .env file.
+The server info page with the tools specs URL is the {APP_HOST} parameter configured in the .env file.
 
 # Screenshots
 
