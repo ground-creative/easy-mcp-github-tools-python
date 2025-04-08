@@ -1,4 +1,4 @@
-# Eeasy MCP GitHub Tools
+# Easy MCP GitHub Tools Application
 
 This is a set of tools for github to be used with easy mcp server.<br>
 https://github.com/ground-creative/easy-mcp-python
@@ -13,6 +13,30 @@ https://github.com/ground-creative/easy-mcp-python
 - **Global Search**: Perform global searches across GitHub for repositories, issues, and code.
 - **Release Management**: Retrieve and manage releases within your GitHub repositories.
 - **OAuth Authentication**: Securely authenticate users using GitHub's OAuth service.
+
+## Authentication
+
+This application uses GitHub oAuth service to authenticate the user.<br>
+To use this app, you must create an OAuth application on GitHub.
+
+How To Authenticate:
+
+1. Go to auth/login and authenticate
+
+2. Use the paramater X-ACCESS-TOKEN with the request headers when making calls to the server.
+
+## Create GitHub Application Instructions
+
+To use this app, you must first create an OAuth application on GitHub. Follow these steps:
+
+1. Go to your GitHub account settings.
+2. Navigate to **Developer settings** > **OAuth Apps**.
+3. Click on **New OAuth App**.
+4. Fill in the required fields:
+   - **Application Name**: Choose a name for your application.
+   - **Homepage URL**: Enter the main URL of your application (e.g., `https://mcp.yourdomain.com`).
+   - **Authorization callback URL**: Set this to `http://{Your Host}:{Your Port}/auth/callback`.
+5. After creating the application, you will receive a **Client ID** and **Client Secret**. Keep these credentials safe, as you will need them to add them to the `client_credentials.json` file.
 
 ## Installation
 
@@ -63,30 +87,6 @@ SITE_NAME=MAin Application Site Name
 # Run via fastapi wrapper
 python3 run.py -s fastapi
 ```
-
-## Authentication
-
-This application uses GitHub oAuth service to authenticate the user.<br>
-To use this app, you must create an OAuth application on GitHub.
-
-How To Authenticate:
-
-1. Go to auth/login and authenticate
-
-2. Use the paramater X-ACCESS-TOKEN with the request headers when making calls to the server.
-
-## Create GitHub Application Instructions
-
-To use this app, you must first create an OAuth application on GitHub. Follow these steps:
-
-1. Go to your GitHub account settings.
-2. Navigate to **Developer settings** > **OAuth Apps**.
-3. Click on **New OAuth App**.
-4. Fill in the required fields:
-   - **Application Name**: Choose a name for your application.
-   - **Homepage URL**: Enter the main URL of your application (e.g., `https://mcp.yourdomain.com`).
-   - **Authorization callback URL**: Set this to `http://{Your Host}:{Your Port}/auth/callback`.
-5. After creating the application, you will receive a **Client ID** and **Client Secret**. Keep these credentials safe, as you will need them to add them to the `client_credentials.json` file.
 
 ## Available MCP Tools
 
