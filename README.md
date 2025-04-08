@@ -67,6 +67,8 @@ SITE_NAME=MAin Application Site Name
 python3 run.py -s fastapi
 ```
 
+## Tools
+
 | Tool Name                 | Description                                                                                  | Parameters Required                                                                                                                                                                                                                                                            |
 | ------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Create Branch             | Creates a new branch in a specified GitHub repository based on an existing branch.           | new_branch (str), base_branch (Optional[str]), repo (Optional[str])                                                                                                                                                                                                            |
@@ -103,3 +105,9 @@ python3 run.py -s fastapi
 | Get Repositories          | Fetch all repositories for a specific GitHub user.                                           | username (Optional[str]), type (Optional[str]), sort (Optional[str]), direction (Optional[str]), page (Optional[int]), per_page (Optional[int])                                                                                                                                |
 | Get Repository Details    | Fetch details for a single repository from GitHub.                                           | repo (Optional[str])                                                                                                                                                                                                                                                           |
 | Get Tags Or Branches      | List either tags or branches in a GitHub repository.                                         | type (str), repo (Optional[str]), per_page (Optional[int]), page (Optional[int])                                                                                                                                                                                               |
+
+\*The `repo` parameter is optional, it can be directy included in the request headers:
+
+```
+X-REPO: owner/repo
+```
