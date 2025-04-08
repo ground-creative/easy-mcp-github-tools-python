@@ -6,21 +6,23 @@ from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
 from core.utils.state import global_state
 from app.middleware.github.GithubAuthMiddleware import check_access
+from core.utils.tools import doc_tag  # Importing the doc_tag
 
 
+@doc_tag("Commits")  # Adding the doc_tag decorator
 def get_commits_tool(
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="Optional, the GitHub repository in the format 'owner/repo'."
-        ),
-    ] = None,
     branch: Annotated[
         Optional[str],
         Field(
             default="main", description="Optional, the branch to fetch commits from."
         ),
     ] = "main",
+    repo: Annotated[
+        Optional[str],
+        Field(
+            description="Optional, the GitHub repository in the format 'owner/repo'."
+        ),
+    ] = None,
     path: Annotated[
         Optional[str],
         Field(
@@ -56,11 +58,12 @@ def get_commits_tool(
     ] = None,
 ) -> str:
     """
-    Fetch commit history from a GitHub repository. The repo parameter is optional, it can also be included in the request headers.
+    Fetch commit history from a GitHub repository.
+    The repo parameter is optional, it can also be included in the request headers.
 
     Args:
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'. This parameter is optional, it can also be included with the request headers.
     - branch (Optional[str]): The branch to fetch commits from. Default is 'main'.
+    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - path (Optional[str]): Specific file or folder path.
     - per_page (Optional[int]): Number of commits to return per page. Default is 15.
     - since (Optional[str]): Fetch commits since this timestamp in ISO 8601 format (e.g., '2023-10-10T14:30:00Z').

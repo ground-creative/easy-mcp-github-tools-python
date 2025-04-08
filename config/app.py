@@ -22,7 +22,7 @@ PRESTART_HOOKS = {
     "fastapi": ["app.middleware.github.database.init_db"],
 }
 
-GITHUB_SCOPE = "repo"
+GITHUB_SCOPE = "repo,delete_repo"
 
 MIDDLEWARE = {
     "mcp": [{"middleware": "app.middleware.github.GithubAuthMiddleware", "priority": 1}]

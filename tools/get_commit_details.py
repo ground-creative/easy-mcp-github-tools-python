@@ -6,8 +6,10 @@ from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
 from core.utils.state import global_state
 from app.middleware.github.GithubAuthMiddleware import check_access
+from core.utils.tools import doc_tag  # Importing the doc_tag
 
 
+@doc_tag("Commits")  # Adding the doc_tag decorator
 def get_commit_details_tool(
     sha: Annotated[
         str,
@@ -19,11 +21,12 @@ def get_commit_details_tool(
     ] = None,
 ) -> str:
     """
-    Fetch detailed information for a specific commit from a GitHub repository. The repo parameter is optional, it can also be included in the request headers.
+    Fetch detailed information for a specific commit from a GitHub repository.
+    The repo parameter is optional, it can also be included in the request headers.
 
     Args:
     - sha (str): The SHA of the commit to fetch details for.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'. This parameter is optional, it can also be included with the request headers.
+    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
 
     Returns:
     - JSON string indicating the commit details or error.
