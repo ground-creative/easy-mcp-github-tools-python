@@ -139,7 +139,7 @@ X-REPO: owner/repo
 
 # Server Info Page
 
-The server info page with the tools specs is located at APP_HOST URL configured in the .env file.
+The server info page with the tools specs is located at {APP_HOST} configured in the .env file.
 
 # Screenshots
 
