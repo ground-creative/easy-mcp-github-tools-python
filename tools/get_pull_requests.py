@@ -1,0 +1,151 @@
+import requests
+import json
+from typing import Optional
+from typing_extensions import Annotated
+from pydantic import Field
+from core.utils.logger import logger  # Importing the logger for logging information
+from core.utils.state import global_state  # Importing global state management
+from app.middleware.github.GithubAuthMiddleware import (
+    check_access,
+)  # Importing authentication check
+from core.utils.tools import doc_tag  # Importing the doc_tag
+
+
+@doc_tag("Pull Requests")  # Adding the doc_tag decorator
+def get_pull_requests_tool(
+    repo: Annotated[
+        Optional[str],
+        Field(
+            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+        ),
+    ] = None,
+    state: Annotated[
+        Optional[str],
+        Field(
+            description="Optional state of the pull requests (e.g., 'open', 'closed')."
+        ),
+    ] = None,
+    sort: Annotated[
+        Optional[str],
+        Field(
+            description="Optional sorting criteria (e.g., 'created', 'updated', 'popularity', 'long-running')."
+        ),
+    ] = None,
+    order: Annotated[
+        Optional[str],
+        Field(description="Optional order of results (e.g., 'asc', 'desc')."),
+    ] = None,
+    per_page: Annotated[
+        Optional[int],
+        Field(description="Optional number of pull requests per page."),
+    ] = None,
+    page: Annotated[
+        Optional[int],
+        Field(description="Optional page number."),
+    ] = None,
+) -> str:
+    """
+    Fetch pull requests from a specified GitHub repository.
+    The repo parameter is optional and can also be included in the request headers.
+
+    Args:
+    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - state (Optional[str]): Optional state of the pull requests (e.g., 'open', 'closed').
+    - sort (Optional[str]): Optional sorting criteria (e.g., 'created', 'updated', 'popularity', 'long-running').
+    - order (Optional[str]): Optional order of results (e.g., 'asc', 'desc').
+    - per_page (Optional[int]): Optional number of pull requests per page.
+    - page (Optional[int]): Optional page number.
+
+    Returns:
+    - JSON string containing the list of pull requests or an error message.
+    """
+    # Log the request details for debugging purposes
+    logger.info(
+        f"Request received to get pull requests for repo: {repo}, state: {state}, sort: {sort}, order: {order}, per_page: {per_page}, page: {page}"
+    )
+
+    # Check authentication before proceeding
+    auth_response = check_access(True)
+    if auth_response:
+        return auth_response  # Return the authentication error if it exists
+
+    # Retrieve credentials and repository information from global state
+    credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
+    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
+
+    # Ensure that a repository is provided
+    if not repo and not middleware_repo:
+        return json.dumps({"error": "Missing required parameters: repo"})
+
+    # Use the middleware repository if no specific repo is provided
+    if not repo:
+        repo = middleware_repo
+
+    # Prepare the URL for fetching pull requests
+    url = f"https://api.github.com/repos/{repo}/pulls"
+
+    # Prepare query parameters for the API request
+    params = {}
+    if state:
+        params["state"] = state
+    if sort:
+        params["sort"] = sort
+    if order:
+        params["order"] = order
+    if per_page is not None:
+        params["per_page"] = per_page
+    if page is not None:
+        params["page"] = page
+
+    # Set up the request headers with authorization
+    headers = {"Authorization": f"token {credentials['access_token']}"}
+
+    # Log the API request details for debugging
+    logger.info(
+        f"Fetching pull requests from GitHub API with URL: {url} and params: {params}"
+    )
+
+    try:
+        # Make the API request to fetch pull requests
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request failed: {e}")  # Log the error
+        return json.dumps(
+            {"error": f"Request failed: {str(e)}"}
+        )  # Return the error message
+
+    try:
+        # Parse the JSON response
+        pull_requests = response.json()
+    except json.JSONDecodeError:
+        logger.error("Failed to decode JSON response")  # Log JSON decoding error
+        return json.dumps(
+            {"error": "Failed to decode JSON response"}
+        )  # Return error message
+
+    # Create a list of pull request details to return
+    pull_request_list = [
+        {
+            "id": pr["id"],
+            "title": pr["title"],
+            "url": pr["html_url"],
+            "state": pr["state"],
+            "created_at": pr["created_at"],
+            "updated_at": pr["updated_at"],
+        }
+        for pr in pull_requests
+    ]
+
+    # Log the number of pull requests found
+    logger.info(f"Found {len(pull_request_list)} pull requests in the repository.")
+
+    # Return the list of pull requests as a JSON string
+    return json.dumps(
+        {
+            "data": {
+                "pull_requests": pull_request_list,
+                "total_count": len(pull_request_list),
+            }
+        }
+    )

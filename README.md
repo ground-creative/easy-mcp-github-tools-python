@@ -106,7 +106,7 @@ python3 run.py -s fastapi
 | Get Repository Details    | Fetch details for a single repository from GitHub.                                           | repo (Optional[str])                                                                                                                                                                                                                                                           |
 | Get Tags Or Branches      | List either tags or branches in a GitHub repository.                                         | type (str), repo (Optional[str]), per_page (Optional[int]), page (Optional[int])                                                                                                                                                                                               |
 
-\*The `repo` parameter is optional, it can be directy included in the request headers:
+\* The `repo` parameter is optional, it can be directy included in the request headers:
 
 ```
 X-REPO: owner/repo
