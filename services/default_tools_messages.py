@@ -7,7 +7,7 @@ from typing import Optional
 router = APIRouter()
 
 # Load the messages from the JSON file
-with open("storage/default_tools_messages.json", "r", encoding="utf-8") as f:
+with open("app/config/default_tools_messages.json", "r", encoding="utf-8") as f:
     messages = json.load(f)
 
 

@@ -1,0 +1,115 @@
+{
+    "en": {
+        "get_commit_details_tool": {
+            "request-start": "Getting commit details with sha `{{ params.sha}}` {% if params.repo %} for repository `{{ params.repo }}` {% endif %}"
+        },
+        "get_commits_tool": {
+            "request-start": "Fetching commits{% if params.repo %} for repository `{{ params.repo }}` {% endif %}{% if params.branch %} from branch `{{ params.branch }}` {% endif %}.{% if params.path %} Using path `{{ params.path }}`.{% endif %}{% if params.per_page %} Getting {{ params.per_page }} results{% endif %}{% if params.since %} since `{{ params.since }}`{% endif %}{% if params.until %} until `{{ params.until }}`{% endif %}."
+        },
+        "get_files_details_tool": {
+            "request-start": "Fetching details for files `{{ params.files }}`{% if params.repo %} for repository `{{ params.repo }}`{% endif %}{% if params.branch %} from branch {{ params.branch }}{% endif %}."
+        },
+        "get_files_before_commit_tool": {
+            "request-start": "Retrieving files before commit SHA `{{ params.sha }}`{% if params.repo %} for repository `{{ params.repo }}`{% endif %}."
+        },
+        "get_files_contents_tool": {
+            "request-start": "Fetching contents of files `{{ params.file_paths }}`{% if params.repo %} for repository `{{ params.repo }}`{% endif %}{% if params.branch %} on branch `{{ params.branch }}`{% endif %}."
+        },
+        "get_file_differences_tool": {
+            "request-start": "Fetching file differences for commit SHA `{{ params.sha }}`{% if params.repo %} in repository `{{ params.repo }}`{% endif %}."
+        },
+        "get_repositories_tool": {
+            "request-start": "Fetching repositories{% if params.username %} for user `{{ params.username }}`{% endif %}{% if params.page %} at page {{ params.page }}{% endif %}.{% if params.sort %} Sorting by `{{ params.sort }}`{% if params.direction %} with direction `{{ params.direction }}`{% endif %}.{% endif %}{% if params.per_page %} Getting {{ params.per_page }} results.{% endif %}"
+        },
+        "get_repository_details_tool": {
+            "request-start": "Fetching details for repository `{{ params.repo }}`"
+        },
+        "find_repositories_by_name_tool": {
+            "request-start": "Searching for repositories{% if params.username %}  for user `{{ params.username }}`{% endif %} with names including `{{ params.query }}`"
+        },
+        "global_search_tool": {
+            "request-start": "Performing `{{ params.search_type }}` global search for `{{ params.query }}`.{% if params.page %} Getting{% if params.per_page %} {{ params.per_page }}{% endif %} results for page {{ params.page }}.{% elif params.per_page %} Getting {{ params.per_page }} results.{% endif %}"
+        },
+        "search_files_tool": {
+            "request-start": "Searching for the string `{{ params.search_string }}`{% if params.repo %} in repository `{{ params.repo }}`{% endif %}{% if params.folders %} within folders `{{ params.folders | join(', ') }}`{% endif %}{% if params.sort %} sorted by `{{ params.sort }}`{% endif %}{% if params.order %} in `{{ params.order }}` order{% endif %}{% if params.page %} on page `{{ params.page }}`{% endif %}{% if params.per_page %} with `{{ params.per_page }}` results per page{% endif %}."
+        },
+        "list_files_tool": {
+            "request-start": "Retrieving files from repository `{{ params.repo }}`{% if params.folders %} in folders `{{ params.folders }}`{% endif %}{% if params.branch %} on branch `{{ params.branch }}`{% endif %}."
+        },
+        "search_files": {
+            "request-start": "Searching files for string `{{ params.search_string }}`{% if params.repo %} in repository `{{ params.repo }}`{% endif %}{% if params.folders %} within folders `{{ params.folders }}`{% endif %}{% if params.branch %} on branch `{{ params.branch }}`{% endif %}."
+        },
+        "get_tags_or_branches_tool": {
+            "request-start": "Listing {{ params.type }}{% if params.repo %} for repository `{{ params.repo }}`{% endif %}{% if params.per_page %} with {{ params.per_page }} items per page{% endif %}{% if params.page %} on page {{ params.page }}{% endif %}."
+        },
+        "get_releases_tool": {
+            "request-start": "Listing releases{% if params.repo %} for repository `{{ params.repo }}`{% endif %}{% if params.per_page %} with {{ params.per_page }} releases per page{% endif %}{% if params.page %} on page {{ params.page }}{% endif %}{% if params.sort %} sorted by `{{ params.sort }}`{% endif %}{% if params.order %} in `{{ params.order }}` order{% endif %}."
+        },
+        "get_pull_requests_tool": {
+            "request-start": "Getting pull requests{% if params.repo %} in repository `{{ params.repo }}`{% endif %}{% if params.state %} with state `{{ params.state }}`{% endif %}{% if params.sort %} sorted by `{{ params.sort }}`{% endif %}{% if params.order %} in `{{ params.order }}` order{% endif %}{% if params.per_page %} with {{ params.per_page }} pull requests per page{% endif %}{% if params.page %} on page {{ params.page }}{% endif %}."
+        },
+        "get_issues_tool": {
+            "request-start": "Searching issues{% if params.repo %} in repository `{{ params.repo }}`{% endif %}{% if params.state %} with state `{{ params.state }}`{% endif %}{% if params.labels %} with labels `{{ params.labels }}`{% endif %}{% if params.assignee %} assigned to `{{ params.assignee }}`{% endif %}{% if params.milestone %} for milestone `{{ params.milestone }}`{% endif %}{% if params.sort %} sorted by `{{ params.sort }}`{% endif %}{% if params.order %} in `{{ params.order }}` order{% endif %}{% if params.per_page %} with {{ params.per_page }} issues per page{% endif %}{% if params.page %} on page {{ params.page }}{% endif %}{% if params.query %} for the term `{{ params.query }}`{% endif %}{% if params.search_comments %}, including comments in the search query{% endif %}."
+        },
+        "get_issue_details_tool": {
+            "request-start": "Retrieving details for issue number {{ params.issue_number }}{% if params.repo %} in repository `{{ params.repo }}`{% endif %}."
+        },
+        "get_issue_comments": {
+            "request-start": "Retrieving all messages for issue number {{ params.issue_number }}{% if params.repo %} in repository `{{ params.repo }}`{% endif %}{% if params.page %} with pagination on page {{ params.page }}{% endif %}{% if params.per_page %} and {{ params.per_page }} comments per page{% endif %}{% if params.sort %}, sorted by `{{ params.sort }}`{% endif %}{% if params.order %} in `{{ params.order }}` order{% endif %}."
+        },
+        "search_issues_tool": {
+            "request-start": "Searching issues{% if params.repo %} in repository `{{ params.repo }}`{% endif %}{% if params.state %} with state `{{ params.state }}`{% endif %}{% if params.labels %} with labels `{{ params.labels }}`{% endif %}{% if params.assignee %} assigned to `{{ params.assignee }}`{% endif %}{% if params.milestone %} for milestone `{{ params.milestone }}`{% endif %}{% if params.sort %} sorted by `{{ params.sort }}`{% endif %}{% if params.order %} in `{{ params.order }}` order{% endif %}{% if params.per_page %} with {{ params.per_page }} issues per page{% endif %}{% if params.page %} on page {{ params.page }}{% endif %}{% if params.query %} for the term `{{ params.query }}`{% endif %}{% if params.search_comments %}, including comments in the search query{% endif %}."
+        },
+        "update_issue_state_tool": {
+            "request-start": "Updating issue number {{ params.issue_number }} to state `{{ params.state }}`{% if params.repo %} in repository `{{ params.repo }}`{% endif %}."
+        },
+        "create_issue_tool": {
+            "request-start": "Creating a new issue with title `{{ params.title }}`{% if params.body %} and body `{{ params.body }}`{% endif %}{% if params.repo %} in repository `{{ params.repo }}`{% endif %}{% if params.labels %} with labels `{{ params.labels }}`{% endif %}."
+        },
+        "create_repository_tool": {
+            "request-start": "Creating a new repository named `{{ params.name }}`{% if params.description %} with description `{{ params.description }}`{% endif %}{% if params.private %} as a private repository{% else %} as a public repository{% endif %}{% if params.auto_init %} and initializing with a README.{% endif %}"
+        },
+        "delete_repository_tool": {
+            "request-start": "Deleting repository `{{ params.repo }}`."
+        },
+        "update_issue_tool": {
+            "request-start": "Updating issue number {{ params.issue_number }}{% if params.title %} with new title `{{ params.title }}`{% endif %}{% if params.body %} and new body `{{ params.body }}`{% endif %}{% if params.state %} to state `{{ params.state }}`{% endif %}{% if params.labels %} with labels `{{ params.labels | join(', ') }}`{% endif %}{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}."
+        },
+        "get_issue_comments_tool": {
+            "request-start": "Retrieving comments for issue number {{ params.issue_number }}{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}{% if params.page %} on page `{{ params.page }}`{% endif %}{% if params.per_page %} with `{{ params.per_page }}` comments per page{% endif %}."
+        },
+        "create_issue_comment_tool": {
+            "request-start": "Adding a comment to issue number {{ params.issue_number }}{% if params.comment %} with the comment `{{ params.comment }}`{% endif %}{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}."
+        },
+        "update_issue_comment_tool": {
+            "request-start": "Updating comment ID {{ params.comment_id }}{% if params.new_comment %} with new comment `{{ params.new_comment }}`{% endif %}{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}."
+        },
+        "delete_issue_comment_tool": {
+            "request-start": "Deleting comment ID {{ params.comment_id }}{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}."
+        },
+        "create_file_tool": {
+            "request-start": "Adding a new file at `{{ params.file_path }}`{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}{% if params.branch %} on branch `{{ params.branch }}`{% endif %}."
+        },
+        "update_file_tool": {
+            "request-start": "Updating the file at `{{ params.file_path }}`{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}{% if params.branch %} on branch `{{ params.branch }}`{% endif %}."
+        },
+        "delete_files_tool": {
+            "request-start": "Deleting files `{{ params.file_paths }}`{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}{% if params.branch %} on branch `{{ params.branch }}`.{% endif %}"
+        },
+        "create_branch_tool": {
+            "request-start": "Creating a new branch `{{ params.new_branch }}`{% if params.base_branch %} from the base branch `{{ params.base_branch }}`{% endif %}{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}."
+        },
+        "delete_branch_tool": {
+            "request-start": "Deleting branch `{{ params.branch }}`{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}."
+        },
+        "create_pull_request_tool": {
+            "request-start": "Creating a pull request to merge changes{% if params.base_branch %} from the base branch `{{ params.base_branch }}`{% endif %}{% if params.target_branch %} into the target branch `{{ params.target_branch }}`{% endif %}{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}{% if params.title %} with the title `{{ params.title }}`{% endif %}{% if params.body %} and body `{{ params.body }}`{% endif %}."
+        },
+        "get_pull_request_details_tool": {
+            "request-start": "Fetching details for pull request {{ params.pull_number }}{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}."
+        },
+        "merge_pull_request_tool": {
+            "request-start": "Merging pull request `{{ params.pull_number }}`{% if params.repo %} in the repository `{{ params.repo }}`{% endif %}{% if params.commit_message %} with the commit message: `{{ params.commit_message }}`{% endif %}."
+        }
+    }
+}

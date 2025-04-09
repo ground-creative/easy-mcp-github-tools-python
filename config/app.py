@@ -8,7 +8,7 @@ SERVICES = [
 
 INFO_SERVICE_CONFIG = {
     "service_uri": "/",
-    "login_url": f"{EnvConfig.get("APP_HOST")}/auth/login",
+    "login_url": f"{EnvConfig.get('APP_HOST')}/auth/login",
     "site_url": EnvConfig.get("SITE_URL"),
     "site_name": EnvConfig.get("SITE_NAME"),
     "show_tools_specs": True,
