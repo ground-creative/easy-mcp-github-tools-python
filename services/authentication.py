@@ -44,7 +44,7 @@ async def github_login(request: Request, current_access_token: str = None):
     state_encoded = base64.urlsafe_b64encode(json.dumps(state_data).encode()).decode()
 
     # Generate the authorization URL with the state parameter
-    authorization_url = f"{GITHUB_OAUTH_URL}?client_id={credentials.get("client_id")}&redirect_uri={EnvConfig.get('APP_HOST')}/auth/callback&scope={config.get("GITHUB_SCOPE")}&state={state_encoded}"
+    authorization_url = f"{GITHUB_OAUTH_URL}?client_id={credentials.get('client_id')}&redirect_uri={EnvConfig.get('APP_HOST')}/auth/callback&scope={config.get('GITHUB_SCOPE')}&state={state_encoded}"
 
     logger.info("Redirecting user to GitHub authorization URL.")
     return RedirectResponse(url=authorization_url)
