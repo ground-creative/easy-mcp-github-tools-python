@@ -8,7 +8,6 @@ from core.utils.state import global_state
 from app.middleware.github.GithubAuthMiddleware import check_access
 from core.utils.tools import doc_tag  # Importing the doc_tag
 
-
 @doc_tag("Commits")  # Adding the doc_tag decorator
 def get_commits_tool(
     repo: Annotated[
@@ -99,10 +98,8 @@ def get_commits_tool(
 
     headers = {"Authorization": f"token {credentials['access_token']}"}
 
-    # Building the base URL
-    url = (
-        f"https://api.github.com/repos/{repo}/commits?sha={branch}&per_page={per_page}"
-    )
+    # Step 2: Building the commits URL using the SHA
+    url = f"https://api.github.com/repos/{repo}/commits?sha={branch}&per_page={per_page}"
 
     if since:
         url += f"&since={since}"
