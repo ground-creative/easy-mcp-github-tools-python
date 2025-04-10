@@ -1,6 +1,5 @@
 import requests
 import json
-from typing import Optional
 from typing_extensions import Annotated
 from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
@@ -12,21 +11,27 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 @doc_tag("Repositories")  # Adding the doc_tag decorator
 def get_repository_details_tool(
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
 ) -> str:
     """
     Fetch details for a single repository from GitHub, including tags, branches, and releases.
-    The repo parameter is optional, it can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
 
     Returns:
     - JSON string containing the details of the repository, tags, branches, and releases or error.
+
+    Example Requests:
+    - Fetching details for repository "owner/repo":
+      get_repository_details_tool(repo="owner/repo")
+    - Fetching details for repository "anotherUser/repoName":
+      get_repository_details_tool(repo="anotherUser/repoName")
     """
     logger.info(f"Fetching details for repository: {repo}")
 
@@ -36,13 +41,6 @@ def get_repository_details_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
 
     headers = {"Authorization": f"token {credentials['access_token']}"}
     url = f"https://api.github.com/repos/{repo}"

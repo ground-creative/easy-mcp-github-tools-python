@@ -16,11 +16,11 @@ def get_issue_comments_tool(
         Field(description="The number of the issue to retrieve."),
     ],
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
     page: Annotated[
         Optional[int],
         Field(description="The page number of comments to retrieve."),
@@ -40,11 +40,11 @@ def get_issue_comments_tool(
 ) -> str:
     """
     Retrieve all messages (details and comments) of a specific issue within a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - issue_number (int): The number of the issue to retrieve. This parameter is required.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - page (Optional[int]): The page number of comments to retrieve (default is 1).
     - per_page (Optional[int]): The number of comments per page (default is 30).
     - sort (Optional[str]): Field to sort comments by (e.g., 'created_at').
@@ -52,6 +52,12 @@ def get_issue_comments_tool(
 
     Returns:
     - JSON string containing the issue details and comments or error.
+
+    Example Requests:
+    - Fetching comments for issue number 123 in repository "owner/repo":
+      get_issue_comments_tool(issue_number=123, repo="owner/repo")
+    - Fetching comments for issue number 456 in repository "anotherUser/repoName", page 2:
+      get_issue_comments_tool(issue_number=456, repo="anotherUser/repoName", page=2)
     """
     logger.info(
         f"Request received to get all messages for repo: {repo}, issue_number: {issue_number}, page: {page}, per_page: {per_page}, sort: {sort}, order: {order}"
@@ -64,13 +70,6 @@ def get_issue_comments_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Prepare the URL to get the issue details
     issue_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}"

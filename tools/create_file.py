@@ -12,6 +12,12 @@ import base64
 
 @doc_tag("Files")
 def create_file_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'. This parameter is required."
+        ),
+    ],
     file_path: Annotated[
         str,
         Field(
@@ -22,12 +28,6 @@ def create_file_tool(
         str,
         Field(description="The content of the file to be created."),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
     commit_message: Annotated[
         Optional[str],
         Field(description="The commit message for the file creation."),
@@ -41,14 +41,19 @@ def create_file_tool(
 ) -> str:
     """
     Adds a new file to a specified GitHub repository on a specified branch.
-    The repo parameter is optional, it can also be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - file_path (str): The path where the file will be created, including the filename.
     - content (str): The content of the file to be created.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - commit_message (Optional[str]): The commit message for the file creation (default is 'Add new file').
     - branch (Optional[str]): The branch where the file will be created (default is 'main').
+
+    Example Requests:
+    - Creating a New File in the Default Branch:
+      create_file_tool(repo="owner/repo", file_path="new_file.txt", content="This is the content of the new file.")
+    - Creating a New File in a Specific Branch:
+      create_file_tool(repo="owner/repo", file_path="new_file.txt", content="This is the content of the new file.", branch="develop")
 
     Returns:
     - JSON string indicating success or error.
@@ -64,13 +69,6 @@ def create_file_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Check if the specified branch exists
     branch_url = f"https://api.github.com/repos/{repo}/branches/{branch}"

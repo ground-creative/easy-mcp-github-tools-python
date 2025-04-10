@@ -19,7 +19,7 @@ class GithubAuthMiddleware(BaseHTTPMiddleware):
         self.db_handler = global_state.get("db_handler")
 
     async def dispatch(self, request: Request, call_next):
-        logger.info("MCP Route middleware GithubAuthMiddleware checking credentials")
+        logger.info("GithubAuthMiddleware: Checking credentials")
         try:
             global_state.set(
                 "middleware.GithubAuthMiddleware.is_authenticated", False, True
@@ -32,7 +32,7 @@ class GithubAuthMiddleware(BaseHTTPMiddleware):
                     f"X-ACCESS-TOKEN is a required header parameter. Please go to {EnvConfig.get('APP_HOST')}/auth/login to get the required paramaters.",
                     True,
                 )
-                logger.warning("No access token found in header.")
+                logger.warning("GithubAuthMiddleware: No access token found in header.")
                 return await call_next(request)
 
             try:
@@ -43,7 +43,7 @@ class GithubAuthMiddleware(BaseHTTPMiddleware):
                     f"There has been an error with authenticating, please go to {EnvConfig.get('APP_HOST')}/auth/login and authenticate again",
                     True,
                 )
-                logger.warning("There has been an error with authenticating.")
+                logger.warning("GithubAuthMiddleware: There has been an error with authenticating.")
                 return await call_next(request)
 
             if "error" in cred:
@@ -52,7 +52,7 @@ class GithubAuthMiddleware(BaseHTTPMiddleware):
                     f"There has been an error with authenticating, please go to {EnvConfig.get('APP_HOST')}/auth/login and authenticate again",
                     True,
                 )
-                logger.warning("No credentials found. Redirecting to login.")
+                logger.warning("GithubAuthMiddleware: No credentials found. Redirecting to login.")
                 return await call_next(request)  # Proceed without authentication
 
             global_state.set(
@@ -61,20 +61,12 @@ class GithubAuthMiddleware(BaseHTTPMiddleware):
             global_state.set(
                 "middleware.GithubAuthMiddleware.credentials", cred["credentials"], True
             )
-            logger.info("User login successful.")
-            repo = request.headers.get("x-repo", None)
-
-            if repo:
-                logger.info(
-                    f"GithubAuthMiddleware: Adding repo `{repo}` to global state"
-                )
-                global_state.set("middleware.GithubAuthMiddleware.repo", repo, True)
-
+            logger.info("GithubAuthMiddleware: User login successful.")
             response = await call_next(request)
             return response
 
         except Exception as e:
-            logger.error(f"Authentication failed: {str(e)}")
+            logger.error(f"GithubAuthMiddleware: Authentication failed: {str(e)}")
             global_state.set(
                 "error_message",
                 f"There has been an error with authenticating, please go to {EnvConfig.get('APP_HOST')}/auth/login to authenticate",

@@ -11,18 +11,18 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Commits")  # Adding the doc_tag decorator
 def get_commits_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     branch: Annotated[
         Optional[str],
         Field(
             default="main", description="Optional, the branch to fetch commits from."
         ),
     ] = "main",
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="Optional, the GitHub repository in the format 'owner/repo'."
-        ),
-    ] = None,
     path: Annotated[
         Optional[str],
         Field(
@@ -59,11 +59,11 @@ def get_commits_tool(
 ) -> str:
     """
     Fetch commit history from a GitHub repository.
-    The repo parameter is optional, it can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - branch (Optional[str]): The branch to fetch commits from. Default is 'main'.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - path (Optional[str]): Specific file or folder path.
     - per_page (Optional[int]): Number of commits to return per page. Default is 15.
     - since (Optional[str]): Fetch commits since this timestamp in ISO 8601 format (e.g., '2023-10-10T14:30:00Z').
@@ -71,6 +71,14 @@ def get_commits_tool(
 
     Returns:
     - JSON string indicating the commits or error.
+
+    Example Requests:
+    - Fetching commits from the main branch of the repository "owner/repo":
+      get_commits_tool(repo="owner/repo")
+    - Fetching commits from the "develop" branch of the repository "anotherUser/repoName":
+      get_commits_tool(repo="anotherUser/repoName", branch="develop")
+    - Fetching commits for a specific file in the repository "owner/repo":
+      get_commits_tool(repo="owner/repo", path="src/main.py")
     """
     logger.info(
         f"Received request to fetch commits for repo: {repo}, branch: {branch}, path: {path}, per_page: {per_page}, since: {since}, until: {until}"
@@ -82,13 +90,6 @@ def get_commits_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
 
     # Ensure per_page is a positive integer
     if per_page <= 0:

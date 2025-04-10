@@ -1,6 +1,6 @@
 import requests
 import json
-from typing import List, Optional
+from typing import List
 from typing_extensions import Annotated
 from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
@@ -11,25 +11,30 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Commits")  # Adding the doc_tag decorator
 def get_commit_details_tool(
+    repo: Annotated[
+        str,
+        Field(description="The GitHub repository in the format 'owner/repo'."),
+    ],
     sha: Annotated[
         str,
         Field(description="The SHA of the commit to fetch details for."),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(description="The GitHub repository in the format 'owner/repo'."),
-    ] = None,
 ) -> str:
     """
     Fetch detailed information for a specific commit from a GitHub repository.
-    The repo parameter is optional, it can also be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - sha (str): The SHA of the commit to fetch details for.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
 
     Returns:
     - JSON string indicating the commit details or error.
+
+    Example Requests:
+    - Fetching details for commit SHA "abc123" in repository "owner/repo":
+      get_commit_details_tool(repo="owner/repo", sha="abc123")
+    - Fetching details for commit SHA "def456" in repository "anotherUser/repoName":
+      get_commit_details_tool(repo="anotherUser/repoName", sha="def456")
     """
     logger.info(f"Fetching commit details for repo: {repo}, SHA: {sha}")
 
@@ -39,13 +44,6 @@ def get_commit_details_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
 
     headers = {"Authorization": f"token {credentials['access_token']}"}
 

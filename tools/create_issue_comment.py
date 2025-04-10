@@ -11,6 +11,12 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Issues")  # Adding the doc_tag decorator
 def create_issue_comment_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     issue_number: Annotated[
         int,
         Field(
@@ -21,21 +27,18 @@ def create_issue_comment_tool(
         str,
         Field(description="The comment text to add to the issue."),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
 ) -> str:
     """
     Adds a comment to a specified issue in a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - issue_number (int): The number of the issue to which the comment will be added.
     - comment (str): The text of the comment to add.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+
+    Example Requests:
+    - Adding a Comment to an Issue:
+      create_issue_comment_tool(repo="owner/repo", issue_number=123, comment="This is a comment on the issue.")
 
     Returns:
     - JSON string containing the created comment details or error.
@@ -51,13 +54,6 @@ def create_issue_comment_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Prepare the URL to add a comment
     url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments"

@@ -11,6 +11,12 @@ from app.middleware.github.GithubAuthMiddleware import check_access
 
 @doc_tag("Branches")
 def create_branch_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'. This parameter is required."
+        ),
+    ],
     new_branch: Annotated[
         str,
         Field(description="The name of the new branch to create."),
@@ -21,21 +27,20 @@ def create_branch_tool(
             description="The base branch from which to create the new branch (default is 'main')."
         ),
     ] = "main",
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
 ) -> str:
     """
     Creates a new branch in a specified GitHub repository based on an existing branch.
-    The repo parameter is optional, it can also be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - new_branch (str): The name of the new branch to create.
     - base_branch (Optional[str]): The base branch from which to create the new branch (default is 'main').
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+
+    Example Requests:
+    - Creating a New Branch from Main:
+      create_branch_tool(new_branch="feature-branch", repo="owner/repo")
+    - Creating a New Branch from a Specific Base Branch:
+      create_branch_tool(new_branch="feature-branch", base_branch="develop", repo="owner/repo")
 
     Returns:
     - JSON string indicating success or error.
@@ -51,13 +56,6 @@ def create_branch_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Prepare the URL to get the SHA of the base branch
     url = f"https://api.github.com/repos/{repo}/git/refs/heads/{base_branch}"

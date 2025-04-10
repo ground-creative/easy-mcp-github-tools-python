@@ -13,31 +13,37 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Pull Requests")  # Adding the doc_tag decorator
 def merge_pull_request_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     pull_number: Annotated[
         int,
         Field(description="The number of the pull request to merge."),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
     commit_message: Annotated[
         Optional[str], Field(description="Optional commit message for the merge.")
     ] = None,
 ) -> str:
     """
     Merge a specific pull request in a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - pull_number (int): The number of the pull request to merge.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - commit_message (Optional[str]): Optional commit message for the merge.
 
     Returns:
     - JSON string containing the response from the GitHub API or an error message.
+
+    Example Requests:
+    - Merging pull request number 42 in repository "owner/repo":
+      merge_pull_request_tool(pull_number=42, repo="owner/repo")
+    - Merging pull request number 10 in repository "anotherUser/repoName" with a custom commit message:
+      merge_pull_request_tool(pull_number=10, repo="anotherUser/repoName", commit_message="Merging feature branch")
     """
     logger.info(
         f"Request received to merge pull request #{pull_number} in repo: {repo}"
@@ -50,15 +56,6 @@ def merge_pull_request_tool(
 
     # Retrieve credentials and repository information from global state
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    # Use the middleware repository if no specific repo is provided
-    if not repo:
-        repo = middleware_repo
-
-    # Validate repository parameter
-    if not repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
 
     # Prepare the URL for merging the pull request
     url = f"https://api.github.com/repos/{repo}/pulls/{pull_number}/merge"

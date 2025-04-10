@@ -16,11 +16,11 @@ def search_files_tool(
         Field(description="The string to search files for in the GitHub repository."),
     ],
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
     folders: Annotated[
         Optional[List[str]],
         Field(description="Optional list of folders to restrict the search."),
@@ -41,11 +41,11 @@ def search_files_tool(
 ) -> str:
     """
     Search for a specific string in the files of a GitHub repository.
-    The repo parameter is optional, it can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - search_string (str): The string to search for in the GitHub repository.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - folders (Optional[List[str]]): Optional list of folders to restrict the search.
     - sort (Optional[str]): The sort field. Can be 'indexed' or 'stars'.
     - order (Optional[str]): The order to sort results. Can be 'asc' or 'desc'.
@@ -54,6 +54,16 @@ def search_files_tool(
 
     Returns:
     - JSON string indicating the matching files or error.
+
+    Example Requests:
+    - Searching for the term "authentication" in repository "owner/repo":
+      search_files_tool(search_string="authentication", repo="owner/repo")
+    - Searching for the term "API" in a specific folder in repository "anotherUser/repoName":
+      search_files_tool(search_string="API", repo="anotherUser/repoName", folders=["src"])
+    - Searching for the term "bug" in repository "exampleUser/repo" and sorting by stars:
+      search_files_tool(search_string="bug", repo="exampleUser/repo", sort="stars", order="desc")
+    - Searching for the term "feature" in repository "owner/repo" with pagination:
+      search_files_tool(search_string="feature", repo="owner/repo", page=2, per_page=50)
     """
     logger.info(
         f"Search request received for string: `{search_string}` in repo: {repo}, folders: {folders}, page: {page}, per_page: {per_page}, sort: {sort}, order: {order}"
@@ -65,13 +75,6 @@ def search_files_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
 
     # Prepare the search URL
     url = f"https://api.github.com/search/code?q={search_string}+in:file+repo:{repo}"

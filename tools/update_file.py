@@ -10,7 +10,6 @@ from app.middleware.github.GithubAuthMiddleware import check_access
 from core.utils.tools import doc_tag  # Importing the doc_tag
 
 
-@doc_tag("Files")  # Adding the doc_tag decorator
 def get_file_sha(repo: str, file_path: str, branch: str, headers: dict) -> str:
     """Fetch the SHA of the specified file in the given branch."""
     url = f"https://api.github.com/repos/{repo}/contents/{file_path}?ref={branch}"
@@ -24,7 +23,7 @@ def get_file_sha(repo: str, file_path: str, branch: str, headers: dict) -> str:
 
     return response.json()["sha"]
 
-
+@doc_tag("Files")  # Adding the doc_tag decorator
 def update_file_tool(
     file_path: Annotated[
         str, Field(description="The path of the file to edit, including the filename.")
@@ -33,11 +32,11 @@ def update_file_tool(
         str, Field(description="The new content to write to the file.")
     ],
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
     commit_message: Annotated[
         Optional[str], Field(description="The commit message for the file update.")
     ] = "Update file",
@@ -50,17 +49,25 @@ def update_file_tool(
 ) -> str:
     """
     Update an existing file in a specified GitHub repository on a specified branch.
-    The repo parameter is optional, it can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - file_path (str): The path of the file to edit, including the filename.
     - new_content (str): The new content to write to the file.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - commit_message (Optional[str]): The commit message for the file update (default is 'Update file').
     - branch (Optional[str]): The branch where the file will be updated (default is 'main').
 
     Returns:
     - JSON string indicating success or error.
+
+    Example Requests:
+    - Updating a file "README.md" in repository "owner/repo":
+      update_file_tool(file_path="README.md", new_content="New content here", repo="owner/repo")
+    - Updating a file "src/main.py" in repository "anotherUser/repoName" with a custom commit message:
+      update_file_tool(file_path="src/main.py", new_content="print('Hello World')", repo="anotherUser/repoName", commit_message="Fix hello world script")
+    - Updating a file "lib/utils.py" in repository "exampleUser/repo" on a specific branch:
+      update_file_tool(file_path="lib/utils.py", new_content="def new_function(): pass", repo="exampleUser/repo", branch="develop")
     """
     logger.info(
         f"Request received to edit file in repo: {repo}, file_path: {file_path}, commit_message: {commit_message}, branch: {branch}"
@@ -73,13 +80,6 @@ def update_file_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    repo = repo or middleware_repo
-    if not repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
     headers = {"Authorization": f"token {credentials['access_token']}"}
 
     try:

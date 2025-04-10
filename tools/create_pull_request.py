@@ -11,6 +11,12 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Pull Requests")  # Adding the doc_tag decorator
 def create_pull_request_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     target_branch: Annotated[
         str,
         Field(description="The name of the branch to update."),
@@ -21,12 +27,6 @@ def create_pull_request_tool(
             description="The base branch from which to merge changes (default is 'main')."
         ),
     ] = "main",
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
     title: Annotated[
         Optional[str], Field(description="The title of the pull request.")
     ] = "Update branch",
@@ -36,14 +36,17 @@ def create_pull_request_tool(
 ) -> str:
     """
     Creates a pull request in a specified GitHub repository by merging changes from one branch to another.
-    The repo parameter is optional and can also be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - target_branch (str): The name of the branch to update.
     - base_branch (Optional[str]): The base branch from which to merge changes (default is 'main').
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - title (Optional[str]): The title of the pull request.
     - body (Optional[str]): The body of the pull request.
+
+    Example Requests:
+    - Creating a Pull Request:
+      create_pull_request_tool(repo="owner/repo", target_branch="feature-branch", base_branch="main", title="New Feature", body="Merging new feature into main branch.")
 
     Returns:
     - JSON string indicating success or error.
@@ -59,13 +62,6 @@ def create_pull_request_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Prepare the URL to create a pull request
     create_pr_url = f"https://api.github.com/repos/{repo}/pulls"

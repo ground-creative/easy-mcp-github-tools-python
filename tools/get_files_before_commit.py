@@ -1,7 +1,7 @@
 import requests
 import json
 import base64
-from typing import List, Optional
+from typing import List
 from typing_extensions import Annotated
 from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
@@ -21,23 +21,29 @@ def get_files_before_commit_tool(
         Field(description="List of target file names to retrieve."),
     ],
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
 ) -> str:
     """
     Retrieve multiple content from multiple files before a given commit SHA.
-    The repo parameter is optional, it can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - sha (str): The current commit SHA.
     - files (List[str]): List of target file names to retrieve.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'. This parameter is optional.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
 
     Returns:
-    - JSON string indicating files details such as size name and URL, and the total files count.
+    - JSON string indicating files details such as size, name, and URL, and the total files count.
+
+    Example Requests:
+    - Fetching files "file1.txt" and "file2.txt" before commit SHA "abc123" in repository "owner/repo":
+      get_files_before_commit_tool(sha="abc123", files=["file1.txt", "file2.txt"], repo="owner/repo")
+    - Fetching files "main.py" and "utils.py" before commit SHA "def456" in repository "anotherUser/repoName":
+      get_files_before_commit_tool(sha="def456", files=["main.py", "utils.py"], repo="anotherUser/repoName")
     """
     logger.info(
         f"Retrieving files before commit SHA: {sha}, files: {files}, repo: {repo}"
@@ -46,7 +52,7 @@ def get_files_before_commit_tool(
     # Check authentication
     auth_response = check_access(True)
     if auth_response:
-        return json.dumps({"error": auth_response})
+        return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
     middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)

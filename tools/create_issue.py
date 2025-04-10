@@ -10,6 +10,12 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Issues")  # Adding the doc_tag decorator
 def create_issue_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     title: Annotated[
         str,
         Field(description="The title of the issue to create."),
@@ -18,12 +24,6 @@ def create_issue_tool(
         Optional[str],
         Field(description="The body of the issue to create."),
     ] = None,
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
     labels: Annotated[
         Optional[list],
         Field(description="Optional list of labels to assign to the issue."),
@@ -31,13 +31,16 @@ def create_issue_tool(
 ) -> str:
     """
     Create a new issue within a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - title (str): The title of the issue to create. This parameter is required.
     - body (Optional[str]): The body of the issue to create.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - labels (Optional[list]): Optional list of labels to assign to the issue.
+
+    Example Requests:
+    - Creating a New Issue:
+      create_issue_tool(repo="owner/repo", title="New Issue Title", body="This is the body of the issue.", labels=["bug", "urgent"])
 
     Returns:
     - JSON string containing the created issue details or error.
@@ -53,13 +56,6 @@ def create_issue_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Prepare the URL to create the issue
     url = f"https://api.github.com/repos/{repo}/issues"

@@ -12,16 +12,16 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Files")  # Adding the doc_tag decorator
 def get_files_contents_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     file_paths: Annotated[
         List[str],
         Field(description="List of file paths to fetch content for."),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional."
-        ),
-    ] = None,
     branch: Annotated[
         Optional[str],
         Field(
@@ -31,12 +31,17 @@ def get_files_contents_tool(
 ) -> str:
     """
     Fetch content for multiple files from a GitHub repository.
-    The repo parameter is optional, it can also be included in the request headers.
 
     Args:
-    - file_paths (List[str]): List of file paths to fetch content for.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'. This parameter is optional.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
+    - file_paths (List[str]): List of file paths to fetch content for. Ex: ['README.md', 'lib/libname/ComponentName.py']
     - branch (Optional[str]): Optional branch name to fetch files from. Defaults to the repository's default branch.
+
+    Example Requests: 
+    - Fetching Files from the Default Branch:
+      get_files_contents_tool(repo="ground-creative/tcval", file_paths=["README.md", "docs/overview.md", "src/main.dart"])
+    - Fetching Files from a Specific Branch:
+      get_files_contents_tool(repo="ground-creative/tcval", file_paths=["README.md", "src/utils/helper.py"], branch="branchname")
 
     Returns:
     - JSON string containing the file contents or error.
@@ -48,23 +53,10 @@ def get_files_contents_tool(
     # Check authentication
     auth_response = check_access(True)
     if auth_response:
-        return json.dumps({"error": auth_response})
+        return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
     token = credentials["access_token"]  # Get the access token
-
-    # Determine the repository to use
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
-
-    # Check if file_paths is provided
-    if not file_paths:
-        return json.dumps({"error": "Missing required parameters: file_paths"})
 
     file_contents = []
     for file_path in file_paths:

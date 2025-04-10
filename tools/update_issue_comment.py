@@ -1,6 +1,5 @@
 import requests
 import json
-from typing import Optional
 from typing_extensions import Annotated
 from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
@@ -20,23 +19,29 @@ def update_issue_comment_tool(
         Field(description="The new comment text to replace the existing comment."),
     ],
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
 ) -> str:
     """
     Updates an existing comment on a specified issue in a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - comment_id (int): The ID of the comment to update.
     - new_comment (str): The new text for the comment.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
 
     Returns:
     - JSON string containing the updated comment details or error.
+
+    Example Requests:
+    - Updating comment 123 in repository "owner/repo":
+      update_issue_comment_tool(comment_id=123, new_comment="This is the updated comment.", repo="owner/repo")
+    - Updating comment 456 in repository "anotherUser/repoName":
+      update_issue_comment_tool(comment_id=456, new_comment="Fixing the previous comment.", repo="anotherUser/repoName")
     """
     logger.info(f"Request received to update comment ID {comment_id} in repo: {repo}")
 
@@ -47,13 +52,6 @@ def update_issue_comment_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Prepare the URL to update a comment
     url = f"https://api.github.com/repos/{repo}/issues/comments/{comment_id}"

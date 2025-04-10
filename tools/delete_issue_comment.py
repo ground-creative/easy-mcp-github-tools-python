@@ -14,18 +14,18 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 CONFIRMATION_TOKEN_VALIDITY_DURATION = 5 * 60  # 5 minutes
 
 
-@doc_tag("Comments")  # Adding the doc_tag decorator
+@doc_tag("Issues")  # Adding the doc_tag decorator
 def delete_issue_comment_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     comment_id: Annotated[
         int,
         Field(description="The ID of the comment to delete."),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
     confirmation_token: Annotated[
         Optional[str],
         Field(
@@ -38,14 +38,37 @@ def delete_issue_comment_tool(
 
     This function first checks if a confirmation token is provided. If not, it generates a token based on the comment ID and repository parameters.
     The user must then confirm the deletion using this token. If the token is provided, the function validates it against the original request parameters before proceeding with the deletion.
-    This ensures that the confirmation token is being used correctly and that the user is confirming the deletion of the intended comment in the correct repository.
     The token is valid for a specified duration.
-    The repo parameter is optional, it can also be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - comment_id (int): The ID of the comment to delete.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - confirmation_token (Optional[str]): An optional token to confirm the deletion. If not provided, a token will be generated based on the comment ID and repository.
+
+    Examples Correct Request:
+    
+    User: "Delete comment 123 for repository owner/repo"
+    # Generate confirmation token to use for next request
+    Assistant Action: `delete_issue_comment_tool(repo="owner/repo", comment_id=123)`
+    Assistant Response: "Please confirm deletion of comment 123"
+    User: "I confirm"
+    # Use the confirmation token from the previous request
+    Assistant Action: `delete_issue_comment_tool(repo="owner/repo", comment_id=123, confirmation_token="XXXYYY")`
+    Assistant Response: "The comment 123 was deleted successfully."
+
+    Examples Incorrect Request:
+    
+    Example 1:
+    User: "Delete comment 123 for repository owner/repo"
+    Assistant Action: `delete_issue_comment_tool(repo="owner/repo", comment_id=123, confirmation_token="made_up_token")`
+    Server Response: Error: Invalid confirmation token. Please provide a valid token to confirm deletion.
+    What went wrong: Instead of requesting a token and asking for confirmation, a made-up token was sent.
+    Example 2:
+    User: "Delete comment 123 for repository owner/repo"
+    # Generate confirmation token to use for next request
+    Assistant Action: `delete_issue_comment_tool(repo="owner/repo", comment_id=123)`
+    Assistant Action: `delete_issue_comment_tool(repo="owner/repo", comment_id=123, confirmation_token="XXXYYY")`
+    What went wrong: Confirmation token was used without asking for confirmation.
 
     Returns:
     - JSON string indicating success or error.
@@ -61,13 +84,6 @@ def delete_issue_comment_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Generate a confirmation token if not provided
     if not confirmation_token:

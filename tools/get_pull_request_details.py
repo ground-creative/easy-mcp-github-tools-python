@@ -1,6 +1,5 @@
 import requests
 import json
-from typing import Optional
 from typing_extensions import Annotated
 from pydantic import Field
 from core.utils.logger import logger  # Importing the logger for logging information
@@ -18,22 +17,28 @@ def get_pull_request_details_tool(
         Field(description="The number of the pull request to retrieve details for."),
     ],
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
 ) -> str:
     """
     Fetch detailed information about a specific pull request from a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - pull_number (int): The number of the pull request to retrieve details for.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
 
     Returns:
     - JSON string containing the pull request details or an error message.
+
+    Example Requests:
+    - Fetching details for pull request number 42 in repository "owner/repo":
+      get_pull_request_details_tool(pull_number=42, repo="owner/repo")
+    - Fetching details for pull request number 10 in repository "anotherUser/repoName":
+      get_pull_request_details_tool(pull_number=10, repo="anotherUser/repoName")
     """
     logger.info(
         f"Request received to get details for pull request #{pull_number} in repo: {repo}"
@@ -46,15 +51,6 @@ def get_pull_request_details_tool(
 
     # Retrieve credentials and repository information from global state
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    # Use the middleware repository if no specific repo is provided
-    if not repo:
-        repo = middleware_repo
-
-    # Validate repository parameter
-    if not repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
 
     # Prepare the URL for fetching pull request details
     url = f"https://api.github.com/repos/{repo}/pulls/{pull_number}"

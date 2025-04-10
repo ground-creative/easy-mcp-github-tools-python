@@ -37,6 +37,12 @@ def create_repository_tool(
     - private (Optional[bool]): Whether the repository should be private.
     - auto_init (Optional[bool]): Whether to create an initial commit with an empty README.
 
+    Example Requests:
+    - Creating a Public Repository:
+      create_repository_tool(name="my-new-repo", description="This is my new repository.", private=False, auto_init=True)
+    - Creating a Private Repository:
+      create_repository_tool(name="my-private-repo", description="This is a private repository.", private=True, auto_init=False)
+
     Returns:
     - JSON string containing the created repository details or error.
     """

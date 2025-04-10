@@ -11,6 +11,12 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Issues")  # Adding the doc_tag decorator
 def update_issue_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     issue_number: Annotated[
         int,
         Field(description="The number of the issue to update."),
@@ -31,16 +37,10 @@ def update_issue_tool(
         Optional[list],
         Field(description="Optional list of labels to assign to the issue."),
     ] = None,
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
 ) -> str:
     """
     Updates an existing issue in a GitHub repository by modifying its title, body, state (open or closed), and labels.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - issue_number (int): The number of the issue to update.
@@ -48,10 +48,18 @@ def update_issue_tool(
     - body (Optional[str]): The new body of the issue.
     - state (Optional[str]): The state of the issue (open or closed).
     - labels (Optional[list]): Optional list of labels to assign to the issue.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
 
     Returns:
     - JSON string containing the updated issue details or error.
+
+    Example Requests:
+    - Updating issue number 123 in repository "owner/repo":
+      update_issue_tool(issue_number=123, title="New Title", body="Updated issue body.", repo="owner/repo")
+    - Closing issue number 456 in repository "anotherUser/repoName":
+      update_issue_tool(issue_number=456, state="closed", repo="anotherUser/repoName")
+    - Adding labels to issue number 789 in repository "exampleUser/repo":
+      update_issue_tool(issue_number=789, labels=["bug", "urgent"], repo="exampleUser/repo")
     """
     logger.info(
         f"Request received to update issue number {issue_number} in repo: {repo}, title: {title}, body: {body}, state: {state}, labels: {labels}"

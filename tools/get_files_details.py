@@ -11,18 +11,18 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Files")  # Adding the doc_tag decorator
 def get_files_details_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     files: Annotated[
         List[str],
         Field(
             description="List of file names to fetch details for. Ex: ['lib/file1.txt', 'assets/file2.txt']"
         ),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
     branch: Annotated[
         Optional[str],
         Field(
@@ -32,15 +32,21 @@ def get_files_details_tool(
 ) -> str:
     """
     Fetch details for multiple files from a GitHub repository without the content.
-    The repo parameter is optional, it can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - files (List[str]): List of file names to fetch details for. Ex: ['lib/file1.txt', 'assets/file2.txt']
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - branch (Optional[str]): Optional branch name to fetch files from. Defaults to the repository's default branch.
 
     Returns:
     - JSON string indicating the files details or error.
+
+    Example Requests:
+    - Fetching details for files "file1.txt" and "file2.txt" in repository "owner/repo":
+      get_files_details_tool(files=["file1.txt", "file2.txt"], repo="owner/repo")
+    - Fetching details for files "main.py" and "helper.py" in repository "anotherUser/repoName":
+      get_files_details_tool(files=["main.py", "helper.py"], repo="anotherUser/repoName", branch="develop")
     """
     logger.info(
         f"File details request received for repo: {repo}, files: {files}, branch: {branch}"
@@ -52,17 +58,6 @@ def get_files_details_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
-
-    if not files:
-        logger.error("Required parameter `files` missing")
-        return json.dumps({"error": "Required parameter `files` missing"})
 
     headers = {"Authorization": f"token {credentials['access_token']}"}
     file_details = []

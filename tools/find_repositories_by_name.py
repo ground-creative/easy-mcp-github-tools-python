@@ -16,7 +16,7 @@ def find_repositories_by_name_tool(
         Field(description="The string to search for in repository names."),
     ],
     username: Annotated[
-        Optional[str],
+        str,
         Field(description="The GitHub username whose repositories to search."),
     ],
 ) -> str:
@@ -26,7 +26,11 @@ def find_repositories_by_name_tool(
 
     Args:
     - query (str): The string to search for in repository names.
-    - username (Optional[str]): The GitHub username to fetch repositories for.
+    - username (str): The GitHub username to fetch repositories for.
+
+    Example Request:
+    - Searching for repositories with the name "project" for user "johnDoe":
+    find_repositories_by_name_tool(query="project", username="johnDoe")
 
     Returns:
     - JSON string containing the search results or error.
@@ -39,19 +43,6 @@ def find_repositories_by_name_tool(
     auth_response = check_access(True)
     if auth_response:
         return auth_response
-
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not username:
-
-        if middleware_repo:
-            username = middleware_repo.split("/")[0]  # Get the part before the slash
-        else:
-            return json.dumps(
-                {
-                    "error": "Missing required parameter: username",
-                }
-            )
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
     headers = {"Authorization": f"token {credentials['access_token']}"}

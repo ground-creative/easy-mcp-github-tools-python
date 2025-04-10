@@ -1,6 +1,6 @@
 import requests
 import json
-from typing import List, Optional
+from typing import List
 from typing_extensions import Annotated
 from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
@@ -11,6 +11,12 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Files")  # Adding the doc_tag decorator
 def get_file_differences_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     sha: Annotated[
         str,
         Field(description="The SHA of the commit to fetch file differences for."),
@@ -19,24 +25,24 @@ def get_file_differences_tool(
         List[str],
         Field(description="List of file names to retrieve diffs for."),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
 ) -> str:
     """
     Fetch file differences for a specific commit from a GitHub repository.
-    The repo parameter is optional, it can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - sha (str): The SHA of the commit.
     - files (List[str]): List of files to retrieve diffs for.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'. This parameter is optional.
 
     Returns:
     - JSON string indicating the file differences or error.
+
+    Example Requests:
+    - Fetching file differences for files "file1.txt" and "file2.txt" at commit SHA "abc123" in repository "owner/repo":
+      get_file_differences_tool(sha="abc123", files=["file1.txt", "file2.txt"], repo="owner/repo")
+    - Fetching file differences for files "main.py" and "utils.py" at commit SHA "def456" in repository "anotherUser/repoName":
+      get_file_differences_tool(sha="def456", files=["main.py", "utils.py"], repo="anotherUser/repoName")
     """
     logger.info(
         f"Fetching file differences for SHA: {sha}, files: {files}, repo: {repo}"
@@ -45,17 +51,9 @@ def get_file_differences_tool(
     # Check authentication
     auth_response = check_access(True)
     if auth_response:
-        return json.dumps({"error": auth_response})
+        return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    # Determine the repository to use
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
 
     headers = {"Authorization": f"token {credentials['access_token']}"}
     url = f"https://api.github.com/repos/{repo}/commits/{sha}"

@@ -18,11 +18,11 @@ def get_tags_or_branches_tool(
         ),
     ],
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
     per_page: Annotated[
         Optional[int],
         Field(description="Optional number of items per page."),
@@ -34,16 +34,22 @@ def get_tags_or_branches_tool(
 ) -> str:
     """
     List either tags or branches in a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - type (str): Specify 'tags' to list tags or 'branches' to list branches.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - per_page (Optional[int]): Optional number of items per page.
     - page (Optional[int]): Optional page number.
 
     Returns:
     - JSON string containing the list of tags or branches or error.
+
+    Example Requests:
+    - Fetching tags for repository "owner/repo":
+      get_tags_or_branches_tool(type="tags", repo="owner/repo")
+    - Fetching branches for repository "anotherUser/repoName":
+      get_tags_or_branches_tool(type="branches", repo="anotherUser/repoName")
     """
     logger.info(f"Request received to list {type} for repo: {repo}")
 
@@ -53,13 +59,6 @@ def get_tags_or_branches_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
 
     # Prepare the URL based on the type
     if type == "tags":

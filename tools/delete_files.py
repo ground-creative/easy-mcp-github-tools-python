@@ -16,24 +16,18 @@ CONFIRMATION_TOKEN_VALIDITY_DURATION = 5 * 60  # 5 minutes
 
 @doc_tag("Files")  # Adding the doc_tag decorator
 def delete_files_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     file_paths: Annotated[
         List[str],
         Field(
             description="A list of paths of the files to delete, including the filenames."
         ),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
-    branch: Annotated[
-        Optional[str],
-        Field(
-            description="The branch from which to delete the files (default is 'main')."
-        ),
-    ] = "main",
     confirmation_token: Annotated[
         Optional[str],
         Field(
@@ -46,15 +40,37 @@ def delete_files_tool(
 
     This function first checks if a confirmation token is provided. If not, it generates a token based on the file paths and repository parameters.
     The user must then confirm the deletion using this token. If the token is provided, the function validates it against the original request parameters before proceeding with the deletion.
-    This ensures that the confirmation token is being used correctly and that the user is confirming the deletion of the intended files in the correct repository.
     The token is valid for a specified duration.
-    The repo parameter is optional, it can also be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - file_paths (List[str]): A list of paths of the files to delete, including the filenames.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
-    - branch (Optional[str]): The branch from which to delete the files (default is 'main').
     - confirmation_token (Optional[str]): An optional token to confirm the deletion. If not provided, a token will be generated based on the file paths and repository.
+
+    Examples Correct Request:
+    
+    User: "Delete files file1.txt and file2.txt for repository owner/repo"
+    # Generate confirmation token to use for next request
+    Assistant Action: `delete_files_tool(repo="owner/repo", file_paths=["file1.txt", "file2.txt"])`
+    Assistant Response: "Please confirm deletion of files file1.txt and file2.txt"
+    User: "I confirm"
+    # Use the confirmation token from the previous request
+    Assistant Action: `delete_files_tool(repo="owner/repo", file_paths=["file1.txt", "file2.txt"], confirmation_token="XXXYYY")`
+    Assistant Response: "The files file1.txt and file2.txt were deleted successfully."
+
+    Incorrect Request:
+    
+    Example 1:
+    User: "Delete files file1.txt and file2.txt for repository owner/repo"
+    Assistant Action: `delete_files_tool(repo="owner/repo", file_paths=["file1.txt", "file2.txt"], confirmation_token="made_up_token")`
+    Server Response: Error: Invalid confirmation token. Please provide a valid token to confirm deletion.
+    What went wrong: Instead of requesting a token and asking for confirmation, a made-up token was sent.
+    Example 2:
+    User: "Delete files file1.txt and file2.txt for repository owner/repo"
+    # Generate confirmation token to use for next request
+    Assistant Action: `delete_files_tool(repo="owner/repo", file_paths=["file1.txt", "file2.txt"])`
+    Assistant Action: `delete_files_tool(repo="owner/repo", file_paths=["file1.txt", "file2.txt"], confirmation_token="XXXYYY")`
+    What went wrong: Confirmation token was used without asking for confirmation.
 
     Returns:
     - JSON string indicating success or error.
@@ -70,13 +86,6 @@ def delete_files_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Generate a confirmation token if not provided
     if not confirmation_token:

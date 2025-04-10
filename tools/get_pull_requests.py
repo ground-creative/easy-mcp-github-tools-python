@@ -14,11 +14,11 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 @doc_tag("Pull Requests")  # Adding the doc_tag decorator
 def get_pull_requests_tool(
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
     state: Annotated[
         Optional[str],
         Field(
@@ -46,10 +46,10 @@ def get_pull_requests_tool(
 ) -> str:
     """
     Fetch pull requests from a specified GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - state (Optional[str]): Optional state of the pull requests (e.g., 'open', 'closed').
     - sort (Optional[str]): Optional sorting criteria (e.g., 'created', 'updated', 'popularity', 'long-running').
     - order (Optional[str]): Optional order of results (e.g., 'asc', 'desc').
@@ -58,6 +58,14 @@ def get_pull_requests_tool(
 
     Returns:
     - JSON string containing the list of pull requests or an error message.
+
+    Example Requests:
+    - Fetching open pull requests from repository "owner/repo":
+      get_pull_requests_tool(repo="owner/repo", state="open")
+    - Fetching closed pull requests sorted by creation date from repository "anotherUser/repoName":
+      get_pull_requests_tool(repo="anotherUser/repoName", state="closed", sort="created")
+    - Fetching pull requests with a specific label from repository "owner/repo":
+      get_pull_requests_tool(repo="owner/repo", labels="bug")
     """
     # Log the request details for debugging purposes
     logger.info(
@@ -71,15 +79,6 @@ def get_pull_requests_tool(
 
     # Retrieve credentials and repository information from global state
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    # Ensure that a repository is provided
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    # Use the middleware repository if no specific repo is provided
-    if not repo:
-        repo = middleware_repo
 
     # Prepare the URL for fetching pull requests
     url = f"https://api.github.com/repos/{repo}/pulls"

@@ -1,6 +1,5 @@
 import requests
 import json
-from typing import Optional
 from typing_extensions import Annotated
 from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
@@ -16,22 +15,28 @@ def get_issue_details_tool(
         Field(description="The number of the issue to retrieve."),
     ],
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
 ) -> str:
     """
     Retrieve the details of a specific issue within a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
     - issue_number (int): The number of the issue to retrieve. This parameter is required.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
 
     Returns:
     - JSON string containing the issue details or error.
+
+    Example Requests:
+    - Fetching details for issue number 123 in repository "owner/repo":
+      get_issue_details_tool(issue_number=123, repo="owner/repo")
+    - Fetching details for issue number 456 in repository "anotherUser/repoName":
+      get_issue_details_tool(issue_number=456, repo="anotherUser/repoName")
     """
     logger.info(
         f"Request received to get issue details for repo: {repo}, issue_number: {issue_number}"
@@ -44,13 +49,6 @@ def get_issue_details_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Prepare the URL to get the issue content
     url = f"https://api.github.com/repos/{repo}/issues/{issue_number}"

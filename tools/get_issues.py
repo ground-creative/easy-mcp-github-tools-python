@@ -12,11 +12,11 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 @doc_tag("Issues")  # Adding the doc_tag decorator
 def get_issues_tool(
     repo: Annotated[
-        Optional[str],
+        str,
         Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
+            description="The GitHub repository in the format 'owner/repo'."
         ),
-    ] = None,
+    ],
     state: Annotated[
         Optional[str],
         Field(description="Optional state of the issues (e.g., 'open', 'closed')."),
@@ -54,10 +54,10 @@ def get_issues_tool(
 ) -> str:
     """
     Fetch issues from a specified GitHub repository, allowing optional filters for state, labels, assignee, and sorting.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - state (Optional[str]): Optional state of the issues (e.g., 'open', 'closed').
     - labels (Optional[str]): Optional comma-separated list of labels.
     - assignee (Optional[str]): Optional GitHub username for issue assignment.
@@ -69,6 +69,14 @@ def get_issues_tool(
 
     Returns:
     - JSON string containing the list of issues or error.
+
+    Example Requests:
+    - Fetching open issues from repository "owner/repo":
+      get_issues_tool(repo="owner/repo", state="open")
+    - Fetching closed issues with label "bug" from repository "anotherUser/repoName":
+      get_issues_tool(repo="anotherUser/repoName", state="closed", labels="bug")
+    - Fetching issues assigned to "username" from repository "owner/repo":
+      get_issues_tool(repo="owner/repo", assignee="username")
     """
     logger.info(
         f"Request received to search issues for repo: {repo}, state: {state}, labels: {labels}, assignee: {assignee}, milestone: {milestone}, sort: {sort}, order: {order}, per_page: {per_page}, page: {page}"
@@ -80,13 +88,6 @@ def get_issues_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
 
     # Prepare the search query
     q = f"repo:{repo}"

@@ -39,6 +39,16 @@ def global_search_tool(
 
     Returns:
     - JSON string containing the search results or error.
+
+    Example Requests:
+    - Searching for repositories with the keyword "machine learning":
+      global_search_tool(search_type="repositories", query="machine learning")
+    - Searching for issues containing the word "bug":
+      global_search_tool(search_type="issues", query="bug")
+    - Searching for code snippets with the term "authentication":
+      global_search_tool(search_type="code", query="authentication", per_page=10)
+    - Searching for users with the name "john":
+      global_search_tool(search_type="users", query="john", page=2)
     """
     logger.info(
         f"Searching GitHub for {search_type} matching query: {query}, page: {page}, per_page: {per_page}"

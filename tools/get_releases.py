@@ -11,6 +11,12 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 
 @doc_tag("Repositories")  # Adding the doc_tag decorator
 def get_releases_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     per_page: Annotated[
         Optional[int],
         Field(description="Optional number of releases per page."),
@@ -18,12 +24,6 @@ def get_releases_tool(
     page: Annotated[
         Optional[int],
         Field(description="Optional page number."),
-    ] = None,
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
     ] = None,
     sort: Annotated[
         Optional[str],
@@ -36,17 +36,25 @@ def get_releases_tool(
 ) -> str:
     """
     Retrieve releases within a GitHub repository.
-    The repo parameter is optional and can also be included in the request headers.
+    The repo parameter is required and must be included in the request headers.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - per_page (Optional[int]): Optional number of releases per page.
     - page (Optional[int]): Optional page number.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - sort (Optional[str]): Optional sorting criteria (e.g., 'created', 'updated').
     - order (Optional[str]): Optional order of results (e.g., 'asc', 'desc').
 
     Returns:
     - JSON string containing the list of releases or error.
+
+    Example Requests:
+    - Fetching releases from repository "owner/repo":
+      get_releases_tool(repo="owner/repo")
+    - Fetching releases from repository "anotherUser/repoName", page 2:
+      get_releases_tool(repo="anotherUser/repoName", page=2)
+    - Fetching releases sorted by creation date from repository "owner/repo":
+      get_releases_tool(repo="owner/repo", sort="created")
     """
     logger.info(
         f"Request received to retrieve releases for repo: {repo}, per_page: {per_page}, page: {page}, sort: {sort}, order: {order}"
@@ -58,13 +66,6 @@ def get_releases_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    if not repo:
-        repo = middleware_repo
 
     # Prepare the URL
     url = f"https://api.github.com/repos/{repo}/releases"

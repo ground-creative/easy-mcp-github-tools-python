@@ -12,7 +12,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 @doc_tag("Repositories")  # Adding the doc_tag decorator
 def get_repositories_tool(
     username: Annotated[
-        Optional[str],
+        str,
         Field(description="The GitHub username to fetch repositories for."),
     ],
     type: Annotated[
@@ -42,10 +42,9 @@ def get_repositories_tool(
 ) -> str:
     """
     Fetch all repositories for a specific GitHub user, handling pagination.
-    Username parameter is optional, if repo is included in request header, the username will be extracted.
 
     Args:
-    - username (Optional[str]): The GitHub username to fetch repositories for.
+    - username (str): The GitHub username to fetch repositories for.
     - type (Optional[str]): Type of repositories to fetch (default is 'all').
     - sort (Optional[str]): Sorting method (default is 'full_name').
     - direction (Optional[str]): Sorting direction (default is 'asc').
@@ -54,6 +53,16 @@ def get_repositories_tool(
 
     Returns:
     - JSON string containing the list of repositories or error.
+
+    Example Requests:
+    - Fetching all repositories for user "octocat":
+      get_repositories_tool(username="octocat")
+    - Fetching public repositories for user "octocat":
+      get_repositories_tool(username="octocat", type="public")
+    - Fetching repositories sorted by creation date in descending order for user "anotherUser":
+      get_repositories_tool(username="anotherUser", sort="created", direction="desc")
+    - Fetching the second page of repositories for user "exampleUser" with 50 repositories per page:
+      get_repositories_tool(username="exampleUser", page=2, per_page=50)
     """
     logger.info(
         f"Fetching repositories for user: {username}, type: {type}, sort: {sort}, direction: {direction}, page: {page}, per_page: {per_page}"
@@ -65,18 +74,6 @@ def get_repositories_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo", None)
-
-    if not username:
-
-        if middleware_repo:
-            username = middleware_repo.split("/")[0]  # Get the part before the slash
-        else:
-            return json.dumps(
-                {
-                    "error": "Missing required parameter: username",
-                }
-            )
 
     headers = (
         {"Authorization": f"token {credentials['access_token']}"} if credentials else {}

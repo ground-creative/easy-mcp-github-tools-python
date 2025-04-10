@@ -16,16 +16,16 @@ CONFIRMATION_TOKEN_VALIDITY_DURATION = 5 * 60  # 5 minutes
 
 @doc_tag("Branches")  # Adding the doc_tag decorator
 def delete_branch_tool(
+    repo: Annotated[
+        str,
+        Field(
+            description="The GitHub repository in the format 'owner/repo'."
+        ),
+    ],
     branch: Annotated[
         str,
         Field(description="The name of the branch to delete."),
     ],
-    repo: Annotated[
-        Optional[str],
-        Field(
-            description="The GitHub repository in the format 'owner/repo'. This parameter is optional and can also be included in the request headers."
-        ),
-    ] = None,
     confirmation_token: Annotated[
         Optional[str],
         Field(
@@ -41,9 +41,33 @@ def delete_branch_tool(
     The token is valid for a specified duration.
 
     Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
     - branch (str): The name of the branch to delete.
-    - repo (Optional[str]): The GitHub repository in the format 'owner/repo'.
     - confirmation_token (Optional[str]): An optional token to confirm the deletion. If not provided, a token will be generated based on the branch and repository.
+
+    Examples Correct Request:
+    
+    User: "Delete branch new-features for repository owner/repo"
+    # Generate confirmation token to use for next request
+    Assistant Action: `delete_branch_tool(repo="owner/repo", branch="new-features")`
+    Assistant Response: "Please confirm deletion of branch new-features"
+    User: "I confirm"
+    # Use the confirmation token from the previous request
+    Assistant Action: `delete_branch_tool(repo="owner/repo", branch="new-features", confirmation_token="XXXYYY")`
+    Assistant Response: "The branch new-features was deleted successfully."
+
+    Examples Incorrect Request:
+    
+    User: "Delete branch new-features for repository owner/repo"
+    Assistant Action: `delete_branch_tool(repo="owner/repo", branch="new-features", confirmation_token="made_up_token")`
+    Server Response: Error: Invalid confirmation token. Please provide a valid token to confirm deletion.
+    What went wrong: Instead of requesting a token and asking for confirmation, a made up token was sent.
+
+    User: "Delete branch new-features for repository owner/repo"
+    # Generate confirmation token to use for next request
+    Assistant Action: `delete_branch_tool(repo="owner/repo", branch="new-features")`
+    Assistant Action: `delete_branch_tool(repo="owner/repo", branch="new-features", confirmation_token="XXXYYY")`
+    What went wrong: Confirmation token was used without asking for confirmation.
 
     Returns:
     - JSON string indicating success or error.
@@ -59,13 +83,6 @@ def delete_branch_tool(
 
     # Retrieve credentials and repository information
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials")
-    middleware_repo = global_state.get("middleware.GithubAuthMiddleware.repo")
-
-    # Validate repository parameter
-    if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
-
-    repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
     # Generate a confirmation token if not provided
     if not confirmation_token:

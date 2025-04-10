@@ -13,9 +13,9 @@ INFO_SERVICE_CONFIG = {
     "site_name": EnvConfig.get("SITE_NAME"),
     "show_tools_specs": True,
     "header_params": {
-        "X-ACCESS-TOKEN": "(Required) The access token for authenticating with the services, you can get one once you are authenticated via the login process.",
-        "X-REPO": "(Optional) The GitHub repository in the format 'owner/repo'. Alternatively you can instruct the llm to send this parameter with each request that requires the repository.",
+        "X-ACCESS-TOKEN": "(Required) The access token for authenticating with the services, you can get one once you are authenticated via the login process."
     },
+    "notes": ["All tools that use delete actions require confirmation, this is an experimental feature."]
 }
 
 PRESTART_HOOKS = {
