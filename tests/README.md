@@ -9,7 +9,7 @@ TEST_TOKEN=Your github token
 TEST_USERNAME=Your github username
 ```
 
-2. Install pytest:
+2. Install `pytest` library:
 
 ```
 pip install pytest==8.3.5
