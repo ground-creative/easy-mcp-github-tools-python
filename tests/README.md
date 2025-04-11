@@ -1,4 +1,4 @@
-# Running Tests Specs
+# Running Tests
 
 ## Installation
 
