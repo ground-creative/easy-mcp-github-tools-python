@@ -1,15 +1,15 @@
-import requests
-import json
-from typing import List
+from typing import List, Optional
 from typing_extensions import Annotated
 from pydantic import Field
-from core.utils.logger import logger  # Importing the logger
+import requests
+import json
+from core.utils.logger import logger
 from core.utils.state import global_state
 from app.middleware.github.GithubAuthMiddleware import check_access
-from core.utils.tools import doc_tag  # Importing the doc_tag
+from core.utils.tools import doc_tag
 
 
-@doc_tag("Commits")  # Adding the doc_tag decorator
+@doc_tag("Commits")
 def get_commit_details_tool(
     repo: Annotated[
         str,
@@ -19,53 +19,77 @@ def get_commit_details_tool(
         str,
         Field(description="The SHA of the commit to fetch details for."),
     ],
-) -> str:
+    files: Annotated[
+        Optional[List[str]],
+        Field(description="Optional list of filenames to return diffs for."),
+    ] = None,
+) -> dict:
     """
-    Fetch detailed information for a specific commit from a GitHub repository.
+    Fetch commit details or file diffs from a GitHub repository.
+
+    If `files` is provided, returns diffs only for those files. Otherwise, returns general commit info.
 
     Args:
     - repo (str): The GitHub repository in the format 'owner/repo'.
-    - sha (str): The SHA of the commit to fetch details for.
+    - sha (str): The SHA of the commit.
+    - files (Optional[List[str]]): Optional list of filenames to filter diffs.
 
     Returns:
-    - JSON string indicating the commit details or error.
+    - JSON response with commit details or file diffs.
 
     Example Requests:
     - Fetching details for commit SHA "abc123" in repository "owner/repo":
       get_commit_details_tool(repo="owner/repo", sha="abc123")
-    - Fetching details for commit SHA "def456" in repository "anotherUser/repoName":
-      get_commit_details_tool(repo="anotherUser/repoName", sha="def456")
+    - Fetching diffs for specific files in commit SHA "abc123" in repository "owner/repo":
+      get_commit_info_tool(repo="owner/repo", sha="abc123", files=["src/main.py", "README.md"])
     """
-    logger.info(f"Fetching commit details for repo: {repo}, SHA: {sha}")
+    logger.info(
+        f"Fetching commit info for repo: {repo}, SHA: {sha}, files filter: {files}"
+    )
 
-    # Check authentication
     auth_response = check_access(True)
     if auth_response:
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-
     headers = {"Authorization": f"token {credentials['access_token']}"}
-
-    # Building the URL to fetch commit details
     url = f"https://api.github.com/repos/{repo}/commits/{sha}"
-
-    # Log the URL that will be used to fetch commit details
-    logger.info(f"Fetching commit details from GitHub API with URL: {url}")
 
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
 
-    try:
+        # If the request is successful, return the response data
         commit = response.json()
-    except json.JSONDecodeError:
-        logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
 
+    except requests.exceptions.RequestException as e:
+        # Capture and return the GitHub error message
+        try:
+            error_details = response.json()
+            error_message = error_details.get("message", str(e))
+        except json.JSONDecodeError:
+            error_message = str(e)
+
+        logger.error(f"GitHub request failed: {error_message}")
+        return {"error": error_message}
+
+    if files:
+        file_diffs = [
+            {
+                "filename": file.get("filename"),
+                "status": file.get("status"),
+                "additions": file.get("additions", 0),
+                "deletions": file.get("deletions", 0),
+                "changes": file.get("changes", 0),
+                "patch": file.get("patch", "No patch available"),
+            }
+            for file in commit.get("files", [])
+            if file.get("filename") in files
+        ]
+        logger.info(f"Returning diffs for {len(file_diffs)} filtered files.")
+        return {"data": {"sha": sha, "files": file_diffs}}
+
+    # No files filter: return full commit info
     commit_details = {
         "sha": commit.get("sha", "N/A"),
         "message": commit.get("commit", {}).get("message", "No message"),
@@ -97,6 +121,5 @@ def get_commit_details_tool(
         ],
     }
 
-    # Log the retrieved commit details
-    logger.info(f"Found commit details for SHA {sha}.")
-    return json.dumps({"commit": commit_details})
+    logger.info(f"Returning full commit details for SHA {sha}")
+    return {"commit": commit_details}

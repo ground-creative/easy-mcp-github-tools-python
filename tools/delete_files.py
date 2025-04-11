@@ -1,26 +1,24 @@
 import requests
 import json
-import base64  # Importing base64 for encoding and decoding
-import time  # Importing time for handling timestamps
+import base64
+import time
 from typing import List, Optional
 from typing_extensions import Annotated
 from pydantic import Field
-from core.utils.logger import logger  # Importing the logger
+from core.utils.logger import logger
 from core.utils.state import global_state
 from app.middleware.github.GithubAuthMiddleware import check_access
-from core.utils.tools import doc_tag  # Importing the doc_tag
+from core.utils.tools import doc_tag
 
 # Define the validity duration for the confirmation token (in seconds)
 CONFIRMATION_TOKEN_VALIDITY_DURATION = 5 * 60  # 5 minutes
 
 
-@doc_tag("Files")  # Adding the doc_tag decorator
+@doc_tag("Files")
 def delete_files_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     file_paths: Annotated[
         List[str],
@@ -34,6 +32,12 @@ def delete_files_tool(
             description="An optional token to confirm the deletion. If not provided, a token will be generated based on the file paths and repository parameters. This token must be used to confirm the deletion request."
         ),
     ] = None,
+    branch: Annotated[
+        Optional[str],
+        Field(
+            description="The branch from which to delete the files (default is 'main')."
+        ),
+    ] = "main",
 ) -> str:
     """
     Deletes specified files in a GitHub repository from a specified branch.
@@ -46,9 +50,10 @@ def delete_files_tool(
     - repo (str): The GitHub repository in the format 'owner/repo'.
     - file_paths (List[str]): A list of paths of the files to delete, including the filenames.
     - confirmation_token (Optional[str]): An optional token to confirm the deletion. If not provided, a token will be generated based on the file paths and repository.
+    - branch (Optional[str]): The branch from which to delete the files (default is 'main').
 
     Examples Correct Request:
-    
+
     User: "Delete files file1.txt and file2.txt for repository owner/repo"
     # Generate confirmation token to use for next request
     Assistant Action: `delete_files_tool(repo="owner/repo", file_paths=["file1.txt", "file2.txt"])`
@@ -59,7 +64,7 @@ def delete_files_tool(
     Assistant Response: "The files file1.txt and file2.txt were deleted successfully."
 
     Incorrect Request:
-    
+
     Example 1:
     User: "Delete files file1.txt and file2.txt for repository owner/repo"
     Assistant Action: `delete_files_tool(repo="owner/repo", file_paths=["file1.txt", "file2.txt"], confirmation_token="made_up_token")`
@@ -93,13 +98,11 @@ def delete_files_tool(
         params_string = f"{','.join(file_paths)}:{repo}:{branch}:{int(time.time())}"
         confirmation_token = base64.b64encode(params_string.encode()).decode()
         logger.info(f"Generated confirmation token: {confirmation_token}")
-        return json.dumps(
-            {
-                "message": f"Confirmation required to delete files at '{file_paths}' on branch '{branch}'. Once confirmed, use the given confirmation_token with the same request parameters.",
-                "confirmation_token": confirmation_token,
-                "action": "confirm_deletion",
-            }
-        )
+        return {
+            "message": f"Confirmation required to delete files at '{file_paths}' on branch '{branch}'. Once confirmed, use the given confirmation_token with the same request parameters.",
+            "confirmation_token": confirmation_token,
+            "action": "confirm_deletion",
+        }
 
     # Decode and validate the confirmation token
     try:
@@ -111,9 +114,9 @@ def delete_files_tool(
 
         # Check if the token has expired
         if time.time() - token_timestamp > CONFIRMATION_TOKEN_VALIDITY_DURATION:
-            return json.dumps(
-                {"error": "Confirmation token has expired. Please request a new token."}
-            )
+            return {
+                "error": "Confirmation token has expired. Please request a new token."
+            }
 
         # Check if the parameters match
         if (
@@ -121,26 +124,25 @@ def delete_files_tool(
             or token_branch != branch
             or set(token_file_paths.split(",")) != set(file_paths)
         ):
-            return json.dumps(
-                {
-                    "error": "Invalid confirmation token. Parameters do not match, please request a new token.",
-                    "details": {
-                        "token_params": {
-                            "file_paths": token_file_paths.split(","),
-                            "repo": token_repo,
-                            "branch": token_branch,
-                        },
-                        "request_params": {
-                            "file_paths": file_paths,
-                            "repo": repo,
-                            "branch": branch,
-                        },
+            return {
+                "error": "Invalid confirmation token. Parameters do not match, please request a new token.",
+                "details": {
+                    "token_params": {
+                        "file_paths": token_file_paths.split(","),
+                        "repo": token_repo,
+                        "branch": token_branch,
                     },
-                }
-            )
+                    "request_params": {
+                        "file_paths": file_paths,
+                        "repo": repo,
+                        "branch": branch,
+                    },
+                },
+            }
+
     except Exception as e:
         logger.error(f"Failed to decode confirmation token: {e}")
-        return json.dumps({"error": "Invalid confirmation token."})
+        return {"error": "Invalid confirmation token."}
 
     # Prepare to delete each file
     responses = []
@@ -158,6 +160,14 @@ def delete_files_tool(
             # Get the current file details to retrieve the SHA
             file_response = requests.get(url, headers=headers)
             file_response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
+            # Check if the file exists (response should be a valid JSON object with file details)
+            if file_response.status_code == 404:
+                responses.append(
+                    {"file_path": file_path, "error": "File not found on GitHub."}
+                )
+                continue
+
             file_info = file_response.json()  # Parse JSON response
 
             # Prepare the URL to delete the file
@@ -173,16 +183,37 @@ def delete_files_tool(
             # Send the request to delete the file
             response = requests.delete(delete_url, headers=headers, json=delete_payload)
             response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
+            if response.status_code == 403:
+                responses.append(
+                    {
+                        "file_path": file_path,
+                        "error": "Permission denied. Check your access rights.",
+                    }
+                )
+                continue
+
             responses.append(
                 {"file_path": file_path, "message": "File deleted successfully."}
             )
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed for file '{file_path}': {e}")
+            # Capture GitHub-specific errors
+            try:
+                error_message = response.json().get("message", "Unknown error")
+                error_code = response.status_code
+            except ValueError:
+                error_message = str(e)
+                error_code = 500
             responses.append(
-                {"file_path": file_path, "error": f"Request failed: {str(e)}"}
+                {
+                    "file_path": file_path,
+                    "error": f"Request failed with {error_code}: {error_message}",
+                }
             )
 
     logger.info(
         f"Files deletion process completed in repository '{repo}' on branch '{branch}'."
     )
-    return json.dumps({"responses": responses})
+    return {"responses": responses}

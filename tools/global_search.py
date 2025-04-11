@@ -76,34 +76,37 @@ def global_search_tool(
     elif search_type == "users":
         url = f"https://api.github.com/search/users?q={query}&page={page}&per_page={per_page}"
     else:
-        return json.dumps(
-            {
-                "error": "Invalid search type. Please use 'repositories', 'issues', 'pulls', 'code', 'commits', or 'users'."
-            }
-        )
+        return {
+            "error": "Invalid search type. Please use 'repositories', 'issues', 'pulls', 'code', 'commits', or 'users'."
+        }
 
     try:
         response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
+        # Check for GitHub-specific errors
+        if response.status_code != 200:
+            error_message = response.json().get(
+                "message", f"Unexpected error: {response.status_code}"
+            )
+            logger.error(f"GitHub error: {error_message}")
+            return {"error": error_message}
+
+        # If no error, parse the response JSON
         search_results = response.json()
         logger.info(
             f"Found {search_results['total_count']} results for {search_type} matching query: {query}"
         )
-        return json.dumps(
-            {
-                "results": search_results["items"],
-                "total_count": search_results["total_count"],
-                "page": page,
-                "per_page": per_page,
-            }
-        )
+        return {
+            "results": search_results["items"],
+            "total_count": search_results["total_count"],
+            "page": page,
+            "per_page": per_page,
+        }
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Search request failed for query {query}: {e}")
-        return json.dumps(
-            {"error": f"Search request failed for query {query}: {str(e)}"}
-        )
+        return {"error": f"Search request failed for query {query}: {str(e)}"}
+
     except json.JSONDecodeError:
         logger.error(f"Failed to decode JSON response for query {query}")
-        return json.dumps(
-            {"error": f"Failed to decode JSON response for query {query}"}
-        )
+        return {"error": f"Failed to decode JSON response for query {query}"}

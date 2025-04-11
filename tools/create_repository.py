@@ -77,13 +77,25 @@ def create_repository_tool(
     try:
         response = requests.post(url, headers=headers, json=repo_data)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
+        # If the request is successful, return the repository data
         created_repo = response.json()  # Parse JSON response
+        logger.info(f"Created repository with name '{name}'.")
+        return created_repo
+
     except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        # Handle GitHub error responses (e.g., 400, 404, 500)
+        error_message = None
+        try:
+            error_details = response.json()
+            if "message" in error_details:
+                error_message = error_details["message"]
+        except json.JSONDecodeError:
+            error_message = "Failed to decode GitHub error response."
+
+        logger.error(f"Request failed: {e}, GitHub error: {error_message}")
+        return {"error": f"Request failed: {str(e)}, GitHub error: {error_message}"}
+
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
-
-    logger.info(f"Created repository with name '{name}'.")
-    return json.dumps(created_repo)
+        return {"error": "Failed to decode JSON response"}

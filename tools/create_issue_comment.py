@@ -13,9 +13,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def create_issue_comment_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     issue_number: Annotated[
         int,
@@ -70,15 +68,28 @@ def create_issue_comment_tool(
     )
 
     try:
+        # Send the request to create the comment
         response = requests.post(url, headers=headers, json=comment_data)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
         created_comment = response.json()  # Parse JSON response
+
     except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        # Log the error message and the response from GitHub API (if available)
+        logger.error(
+            f"Request failed: {e}, Response: {response.text if response else 'No response'}"
+        )
+
+        # Check if a response was returned, and if so, return the error message from GitHub
+        if response:
+            return {"error": f"GitHub API Error: {response.text}"}
+
+        # If no response is available, return a generic error message
+        return {"error": f"Failed to create comment: {str(e)}"}
+
     except json.JSONDecodeError:
+        # Log and return a message in case the response is not valid JSON
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     logger.info(f"Comment added to issue number {issue_number}.")
-    return json.dumps(created_comment)
+    return created_comment

@@ -12,9 +12,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def get_repository_details_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
 ) -> str:
     """
@@ -49,44 +47,69 @@ def get_repository_details_tool(
     try:
         # Fetch repository details
         response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
+        # If the response contains an error message, return that directly
+        if response.status_code != 200:
+            error_message = response.json().get(
+                "message", f"Unexpected error: {response.status_code}"
+            )
+            logger.error(f"GitHub error: {error_message}")
+            return {"error": error_message}
+
         repository_details = response.json()
 
         # Fetch tags
         tags_response = requests.get(
             f"https://api.github.com/repos/{repo}/tags", headers=headers
         )
-        tags_response.raise_for_status()
+        if tags_response.status_code != 200:
+            error_message = tags_response.json().get(
+                "message", f"Unexpected error: {tags_response.status_code}"
+            )
+            logger.error(f"GitHub error: {error_message}")
+            return {"error": error_message}
         tags = tags_response.json()
 
         # Fetch branches
         branches_response = requests.get(
             f"https://api.github.com/repos/{repo}/branches", headers=headers
         )
-        branches_response.raise_for_status()
+        if branches_response.status_code != 200:
+            error_message = branches_response.json().get(
+                "message", f"Unexpected error: {branches_response.status_code}"
+            )
+            logger.error(f"GitHub error: {error_message}")
+            return {"error": error_message}
         branches = branches_response.json()
 
         # Fetch releases
         releases_response = requests.get(
             f"https://api.github.com/repos/{repo}/releases", headers=headers
         )
-        releases_response.raise_for_status()
+        if releases_response.status_code != 200:
+            error_message = releases_response.json().get(
+                "message", f"Unexpected error: {releases_response.status_code}"
+            )
+            logger.error(f"GitHub error: {error_message}")
+            return {"error": error_message}
         releases = releases_response.json()
 
         logger.info(f"Fetched details for repository: {repo}")
-        return json.dumps(
-            {
-                "repository_details": repository_details,
-                "tags": tags,
-                "branches": branches,
-                "releases": releases,
-            }
-        )
+        return {
+            "repository_details": repository_details,
+            "tags": tags,
+            "branches": branches,
+            "releases": releases,
+        }
+
     except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed for repository {repo}: {e}")
-        return json.dumps({"error": f"Request failed for repository {repo}: {str(e)}"})
+        # Directly return the GitHub error response if present
+        error_message = response.json().get(
+            "message", str(e)
+        )  # Get GitHub error message
+        logger.error(f"GitHub error: {error_message}")
+        return {"error": error_message}
+
     except json.JSONDecodeError:
         logger.error(f"Failed to decode JSON response for repository {repo}")
-        return json.dumps(
-            {"error": f"Failed to decode JSON response for repository {repo}"}
-        )
+        return {"error": f"Failed to decode JSON response for repository {repo}"}

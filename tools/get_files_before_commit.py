@@ -10,7 +10,7 @@ from app.middleware.github.GithubAuthMiddleware import check_access
 from core.utils.tools import doc_tag  # Importing the doc_tag
 
 
-@doc_tag("Files")  # Adding the doc_tag decorator
+@doc_tag("Commits")  # Adding the doc_tag decorator
 def get_files_before_commit_tool(
     sha: Annotated[
         str,
@@ -22,9 +22,7 @@ def get_files_before_commit_tool(
     ],
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
 ) -> str:
     """
@@ -59,13 +57,13 @@ def get_files_before_commit_tool(
 
     # Determine the repository to use
     if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
+        return {"error": "Missing required parameters: repo"}
 
     if not repo:
         repo = middleware_repo
 
     if not isinstance(files, list) or len(files) == 0:
-        return json.dumps({"error": "file names must be a non-empty list"})
+        return {"error": "file names must be a non-empty list"}
 
     headers = {"Authorization": f"token {credentials['access_token']}"}
 
@@ -75,15 +73,22 @@ def get_files_before_commit_tool(
 
     commit_response = requests.get(commit_url, headers=headers)
     if commit_response.status_code != 200:
-        return json.dumps({"error": f"GitHub API error: {commit_response.text}"})
+        try:
+            error_details = (
+                commit_response.json()
+            )  # Try to parse error details from response
+            error_message = error_details.get("message", "Unknown error")
+        except json.JSONDecodeError:
+            error_message = (
+                commit_response.text
+            )  # Fallback to the raw response text if it's not JSON
+        return {"error": f"GitHub API error: {error_message}"}
 
     commit_data = commit_response.json()
     parent_sha = commit_data.get("parents", [{}])[0].get("sha")
 
     if not parent_sha:
-        return json.dumps(
-            {"error": "No parent commit found. This might be the first commit."}
-        )
+        return {"error": "No parent commit found. This might be the first commit."}
 
     files_data = []
 
@@ -96,10 +101,19 @@ def get_files_before_commit_tool(
 
         file_response = requests.get(file_url, headers=headers)
         if file_response.status_code != 200:
+            try:
+                error_details = (
+                    file_response.json()
+                )  # Try to parse error details from response
+                error_message = error_details.get("message", "Unknown error")
+            except json.JSONDecodeError:
+                error_message = (
+                    file_response.text
+                )  # Fallback to the raw response text if it's not JSON
             files_data.append(
                 {
                     "filename": filename,
-                    "error": f"GitHub API error: {file_response.text}",
+                    "error": f"GitHub API error: {error_message}",
                 }
             )
             continue
@@ -126,4 +140,4 @@ def get_files_before_commit_tool(
         )
 
     logger.info(f"Found {len(files_data)} files.")
-    return json.dumps({"data": {"sha": parent_sha, "files": files_data}})
+    return {"sha": parent_sha, "files": files_data}

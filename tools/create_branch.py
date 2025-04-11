@@ -82,16 +82,20 @@ def create_branch_tool(
         create_response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
 
     except requests.exceptions.RequestException as e:
+        # Log the error message from GitHub, if available
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        if e.response:
+            # If the exception has a response (i.e., 4xx or 5xx error), include the error message from GitHub
+            logger.error(f"GitHub API Error Response: {e.response.text}")
+            return {"error": f"GitHub API Error: {e.response.text}"}
+        return {"error": f"Request failed: {str(e)}"}
+
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     logger.info(f"Branch '{new_branch}' created successfully in repository '{repo}'.")
-    return json.dumps(
-        {
-            "message": f"Branch '{new_branch}' created successfully.",
-            "base_branch": base_branch,
-        }
-    )
+    return {
+        "message": f"Branch '{new_branch}' created successfully.",
+        "base_branch": base_branch,
+    }

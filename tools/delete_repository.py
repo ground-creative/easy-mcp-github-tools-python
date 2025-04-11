@@ -41,7 +41,7 @@ def delete_repository_tool(
     - confirmation_token (Optional[str]): An optional token to confirm the deletion. If not provided, a token will be generated based on the repository.
 
     Examples Correct Request:
-    
+
     User: "Delete repository owner/repo"
     # Generate confirmation token to use for next request
     Assistant Action: `delete_repository_tool(repo="owner/repo")`
@@ -52,7 +52,7 @@ def delete_repository_tool(
     Assistant Response: "The repository owner/repo was deleted successfully."
 
     Examples Incorrect Request:
-    
+
     Example 1:
     User: "Delete repository owner/repo"
     Assistant Action: `delete_repository_tool(repo="owner/repo", confirmation_token="made_up_token")`
@@ -86,13 +86,11 @@ def delete_repository_tool(
         params_string = f"{repo}:{int(time.time())}"
         confirmation_token = base64.b64encode(params_string.encode()).decode()
         logger.info(f"Generated confirmation token: {confirmation_token}")
-        return json.dumps(
-            {
-                "message": f"Confirmation required to delete repository '{repo}'. Once confirmed, use the given confirmation_token with the same request parameters.",
-                "confirmation_token": confirmation_token,
-                "action": "confirm_deletion",
-            }
-        )
+        return {
+            "message": f"Confirmation required to delete repository '{repo}'. Once confirmed, use the given confirmation_token with the same request parameters.",
+            "confirmation_token": confirmation_token,
+            "action": "confirm_deletion",
+        }
 
     # Decode and validate the confirmation token
     try:
@@ -102,28 +100,27 @@ def delete_repository_tool(
 
         # Check if the token has expired
         if time.time() - token_timestamp > CONFIRMATION_TOKEN_VALIDITY_DURATION:
-            return json.dumps(
-                {"error": "Confirmation token has expired. Please request a new token."}
-            )
+            return {
+                "error": "Confirmation token has expired. Please request a new token."
+            }
 
         # Check if the parameters match
         if token_repo != repo:
-            return json.dumps(
-                {
-                    "error": "Invalid confirmation token. Parameters do not match, please request a new token.",
-                    "details": {
-                        "token_params": {
-                            "repo": token_repo,
-                        },
-                        "request_params": {
-                            "repo": repo,
-                        },
+            return {
+                "error": "Invalid confirmation token. Parameters do not match, please request a new token.",
+                "details": {
+                    "token_params": {
+                        "repo": token_repo,
                     },
-                }
-            )
+                    "request_params": {
+                        "repo": repo,
+                    },
+                },
+            }
+
     except Exception as e:
         logger.error(f"Failed to decode confirmation token: {e}")
-        return json.dumps({"error": "Invalid confirmation token."})
+        return {"error": "Invalid confirmation token."}
 
     # Prepare to delete the repository
     url = f"https://api.github.com/repos/{repo}"
@@ -135,10 +132,12 @@ def delete_repository_tool(
     logger.info(f"Deleting repository in GitHub API with URL: {url}")
 
     try:
-        # Send the request to delete the repository
         response = requests.delete(url, headers=headers)
-        response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
-        return json.dumps({"message": f"Repository '{repo}' deleted successfully."})
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed for repository '{repo}': {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        response.raise_for_status()  # This will raise an HTTPError for 4xx/5xx responses
+        return {"message": f"Repository '{repo}' deleted successfully."}
+    except requests.exceptions.HTTPError as http_err:
+        logger.error(f"HTTP error occurred: {http_err}")
+        return {"error": f"HTTP error occurred: {http_err}"}
+    except requests.exceptions.RequestException as err:
+        logger.error(f"Request error occurred: {err}")
+        return {"error": f"Request error occurred: {err}"}

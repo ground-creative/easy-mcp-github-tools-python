@@ -49,12 +49,6 @@ def create_file_tool(
     - commit_message (Optional[str]): The commit message for the file creation (default is 'Add new file').
     - branch (Optional[str]): The branch where the file will be created (default is 'main').
 
-    Example Requests:
-    - Creating a New File in the Default Branch:
-      create_file_tool(repo="owner/repo", file_path="new_file.txt", content="This is the content of the new file.")
-    - Creating a New File in a Specific Branch:
-      create_file_tool(repo="owner/repo", file_path="new_file.txt", content="This is the content of the new file.", branch="develop")
-
     Returns:
     - JSON string indicating success or error.
     """
@@ -78,8 +72,11 @@ def create_file_tool(
         branch_response = requests.get(branch_url, headers=headers)
         branch_response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
     except requests.exceptions.RequestException as e:
-        logger.error(f"Branch check failed: {e}")
-        return json.dumps({"error": f"Branch '{branch}' does not exist."})
+        error_message = f"Branch check failed: {e}, Response: {branch_response.text if branch_response else 'No response'}"
+        logger.error(error_message)
+        return {
+            "error": f"Branch '{branch}' does not exist. GitHub Error: {branch_response.text if branch_response else 'No response'}"
+        }
 
     # Prepare the URL to check if the file already exists
     check_url = f"https://api.github.com/repos/{repo}/contents/{file_path}?ref={branch}"
@@ -88,9 +85,7 @@ def create_file_tool(
         # Check if the file already exists
         file_response = requests.get(check_url, headers=headers)
         if file_response.status_code == 200:
-            return json.dumps(
-                {"error": "File already exists. Please update the file instead."}
-            )
+            return {"error": "File already exists. Please update the file instead."}
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to check file existence: {e}")
 
@@ -112,16 +107,20 @@ def create_file_tool(
         # Send the request to create the file
         response = requests.put(url, headers=headers, json=payload)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+        created_file = response.json()  # Parse the successful response
     except requests.exceptions.RequestException as e:
-        logger.error(
-            f"Request failed: {e}, Response: {response.text if response else 'No response'}"
-        )
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        # Log and return the detailed error message from GitHub
+        error_message = f"Request failed: {e}, Response: {response.text if response else 'No response'}"
+        logger.error(error_message)
+        return {
+            "error": f"Failed to create file: {str(e)}. GitHub API Error: {response.text if response else 'No response'}"
+        }
+
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     logger.info(
         f"File '{file_path}' created successfully in repository '{repo}' on branch '{branch}'."
     )
-    return json.dumps({"message": "File created successfully.", "file_path": file_path})
+    return {"message": "File created successfully.", "file_path": file_path}

@@ -13,9 +13,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def create_pull_request_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     target_branch: Annotated[
         str,
@@ -70,7 +68,9 @@ def create_pull_request_tool(
     # Prepare the payload for the pull request
     payload = {"title": title, "head": target_branch, "base": base_branch, "body": body}
 
-    logger.info(f"Creating pull request in GitHub API with URL: {create_pr_url}")
+    logger.info(
+        f"Creating pull request in GitHub API with URL: {create_pr_url} {payload}"
+    )
 
     try:
         # Send the request to create the pull request
@@ -78,18 +78,35 @@ def create_pull_request_tool(
         create_response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        # Log detailed information about the error
+        error_message = f"Request failed: {str(e)}"
+
+        # Check if we have a response to log
+        if create_response is not None:
+            try:
+                error_details = (
+                    create_response.json()
+                )  # Get the error details from GitHub response
+            except json.JSONDecodeError:
+                error_details = (
+                    create_response.text
+                )  # If JSON parsing fails, fall back to plain text response
+
+            logger.error(f"{error_message}. GitHub API response: {error_details}")
+            return {"error": error_message, "details": error_details}
+        else:
+            # If no response is available, just log the error
+            logger.error(error_message)
+            return {"error": error_message}
+
     except json.JSONDecodeError:
-        logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        logger.error("Failed to decode JSON response from GitHub API")
+        return {"error": "Failed to decode JSON response"}
 
     logger.info(
         f"Pull request created successfully to update branch '{target_branch}' in repository '{repo}'."
     )
-    return json.dumps(
-        {
-            "message": f"Pull request created successfully to update branch '{target_branch}'.",
-            "pull_request_url": create_response.json().get("html_url"),
-        }
-    )
+    return {
+        "message": f"Pull request created successfully to update branch '{target_branch}'.",
+        "pull_request_url": create_response.json().get("html_url"),
+    }

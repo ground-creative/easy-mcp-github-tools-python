@@ -17,9 +17,7 @@ def search_files_tool(
     ],
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     folders: Annotated[
         Optional[List[str]],
@@ -40,8 +38,7 @@ def search_files_tool(
     ] = 30,  # Default value for results per page
 ) -> str:
     """
-    Search for a specific string in the files of a GitHub repository.
-    The repo parameter is required and must be included in the request headers.
+    Search for a specific string in the files of a GitHub repository in the main branch.
 
     Args:
     - search_string (str): The string to search for in the GitHub repository.
@@ -99,13 +96,13 @@ def search_files_tool(
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        return {"error": f"Request failed: {str(e)}"}
 
     try:
         search_results = response.json()
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     matching_files = [
         {
@@ -120,11 +117,7 @@ def search_files_tool(
         f"Found {len(matching_files)} matching files for the string '{search_string}'."
     )
 
-    return json.dumps(
-        {
-            "data": {
-                "matching_files": matching_files,
-                "total_count": len(matching_files),
-            }
-        }
-    )
+    return {
+        "matching_files": matching_files,
+        "total_count": len(matching_files),
+    }

@@ -13,9 +13,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def update_issue_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     issue_number: Annotated[
         int,
@@ -76,7 +74,7 @@ def update_issue_tool(
 
     # Validate repository parameter
     if not repo and not middleware_repo:
-        return json.dumps({"error": "Missing required parameters: repo"})
+        return {"error": "Missing required parameters: repo"}
 
     repo = repo or middleware_repo  # Use middleware_repo if repo is not provided
 
@@ -105,11 +103,18 @@ def update_issue_tool(
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
         updated_issue = response.json()  # Parse JSON response
     except requests.exceptions.RequestException as e:
+        if response.status_code != 200:  # Check if GitHub returned an error
+            try:
+                error_message = response.json().get("message", "No message provided")
+                logger.error(f"GitHub error: {error_message}")
+                return {"error": f"GitHub error: {error_message}"}
+            except json.JSONDecodeError:
+                logger.error(
+                    f"GitHub returned an error, but the response could not be parsed: {response.text}"
+                )
+                return {"error": f"GitHub error: {response.text}"}
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
-    except json.JSONDecodeError:
-        logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": f"Request failed: {str(e)}"}
 
     logger.info(f"Updated issue number {issue_number}.")
-    return json.dumps(updated_issue)
+    return updated_issue

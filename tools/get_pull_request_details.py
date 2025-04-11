@@ -18,9 +18,7 @@ def get_pull_request_details_tool(
     ],
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
 ) -> str:
     """
@@ -60,19 +58,20 @@ def get_pull_request_details_tool(
     logger.info(f"Fetching pull request details from GitHub API with URL: {url}")
 
     try:
-        # Make the API request to fetch pull request details
         response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+        if not response.ok:
+            logger.error(f"GitHub API error: {response.status_code} - {response.text}")
+            try:
+                return (
+                    response.json()
+                )  # This will return GitHub's "message" if available
+            except json.JSONDecodeError:
+                return {"error": f"GitHub API returned status {response.status_code}"}
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        return {"error": f"Request failed: {str(e)}"}
 
-    try:
-        # Parse the JSON response
-        pull_request_details = response.json()
-    except json.JSONDecodeError:
-        logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+    pull_request_details = response.json()
 
     # Log the details retrieved
     logger.info(
@@ -80,4 +79,4 @@ def get_pull_request_details_tool(
     )
 
     # Return the pull request details as a JSON string
-    return json.dumps(pull_request_details)
+    return pull_request_details

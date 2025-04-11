@@ -8,13 +8,12 @@ from core.utils.state import global_state
 from app.middleware.github.GithubAuthMiddleware import check_access
 from core.utils.tools import doc_tag  # Importing the doc_tag
 
+
 @doc_tag("Issues")  # Adding the doc_tag decorator
 def create_issue_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     title: Annotated[
         str,
@@ -74,13 +73,25 @@ def create_issue_tool(
     try:
         response = requests.post(url, headers=headers, json=issue_data)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
+        # If the request is successful, return the issue data
         created_issue = response.json()  # Parse JSON response
+        logger.info(f"Created issue with title '{title}'.")
+        return created_issue
+
     except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        # Handle GitHub error responses (e.g., 400, 404, 500)
+        error_message = None
+        try:
+            error_details = response.json()
+            if "message" in error_details:
+                error_message = error_details["message"]
+        except json.JSONDecodeError:
+            error_message = "Failed to decode GitHub error response."
+
+        logger.error(f"Request failed: {e}, GitHub error: {error_message}")
+        return {"error": f"Request failed: {str(e)}, GitHub error: {error_message}"}
+
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
-
-    logger.info(f"Created issue with title '{title}'.")
-    return json.dumps(created_issue)
+        return {"error": "Failed to decode JSON response"}

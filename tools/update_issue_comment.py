@@ -20,9 +20,7 @@ def update_issue_comment_tool(
     ],
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
 ) -> str:
     """
@@ -72,11 +70,22 @@ def update_issue_comment_tool(
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
         updated_comment = response.json()  # Parse JSON response
     except requests.exceptions.RequestException as e:
+        # If GitHub returned an error response, capture and log it
+        if response.status_code != 200:
+            try:
+                error_message = response.json().get("message", "No message provided")
+                logger.error(f"GitHub error: {error_message}")
+                return {"error": f"GitHub error: {error_message}"}
+            except json.JSONDecodeError:
+                logger.error(
+                    f"GitHub returned an error, but the response could not be parsed: {response.text}"
+                )
+                return {"error": f"GitHub error: {response.text}"}
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        return {"error": f"Request failed: {str(e)}"}
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     logger.info(f"Comment ID {comment_id} updated successfully.")
-    return json.dumps(updated_comment)
+    return updated_comment

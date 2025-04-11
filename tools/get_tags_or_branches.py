@@ -19,9 +19,7 @@ def get_tags_or_branches_tool(
     ],
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     per_page: Annotated[
         Optional[int],
@@ -66,9 +64,7 @@ def get_tags_or_branches_tool(
     elif type == "branches":
         url = f"https://api.github.com/repos/{repo}/branches"
     else:
-        return json.dumps(
-            {"error": "Invalid type specified. Use 'tags' or 'branches'."}
-        )
+        return {"error": "Invalid type specified. Use 'tags' or 'branches'."}
 
     headers = {"Authorization": f"token {credentials['access_token']}"}
 
@@ -83,43 +79,48 @@ def get_tags_or_branches_tool(
 
     try:
         response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
+        # Check for GitHub errors directly by inspecting the response status
+        if response.status_code != 200:
+            error_message = response.json().get(
+                "message", f"Unexpected error: {response.status_code}"
+            )
+            logger.error(f"GitHub error: {error_message}")
+            return {"error": error_message}
+
+        # Proceed with parsing the response if no error
+        items = response.json()
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        return {"error": f"Request failed: {str(e)}"}
 
     try:
-        items = response.json()
-    except json.JSONDecodeError:
-        logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
-
-    if type == "tags":
-        item_list = [
-            {
-                "tag": item["ref"].replace("refs/tags/", ""),
-                "commit_sha": item["object"]["sha"],
-                "url": item["object"]["url"],
-            }
-            for item in items
-        ]
-    else:  # type == 'branches'
-        item_list = [
-            {
-                "name": item["name"],
-                "commit_sha": item["commit"]["sha"],
-                "url": item["commit"]["url"],
-            }
-            for item in items
-        ]
+        if type == "tags":
+            item_list = [
+                {
+                    "tag": item["ref"].replace("refs/tags/", ""),
+                    "commit_sha": item["object"]["sha"],
+                    "url": item["object"]["url"],
+                }
+                for item in items
+            ]
+        else:  # type == 'branches'
+            item_list = [
+                {
+                    "name": item["name"],
+                    "commit_sha": item["commit"]["sha"],
+                    "url": item["commit"]["url"],
+                }
+                for item in items
+            ]
+    except (KeyError, TypeError):
+        logger.error("Unexpected structure in GitHub API response")
+        return {"error": "Unexpected structure in GitHub API response"}
 
     logger.info(f"Found {len(item_list)} {type} in the repository.")
 
-    return json.dumps(
-        {
-            "data": {
-                type: item_list,
-                "total_count": len(item_list),
-            }
-        }
-    )
+    return {
+        type: item_list,
+        "total_count": len(item_list),
+    }

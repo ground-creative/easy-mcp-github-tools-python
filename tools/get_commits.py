@@ -1,6 +1,6 @@
 import requests
 import json
-from typing import List, Optional
+from typing import Optional
 from typing_extensions import Annotated
 from pydantic import Field
 from core.utils.logger import logger  # Importing the logger
@@ -8,13 +8,12 @@ from core.utils.state import global_state
 from app.middleware.github.GithubAuthMiddleware import check_access
 from core.utils.tools import doc_tag  # Importing the doc_tag
 
+
 @doc_tag("Commits")  # Adding the doc_tag decorator
 def get_commits_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     branch: Annotated[
         Optional[str],
@@ -92,14 +91,14 @@ def get_commits_tool(
 
     # Ensure per_page is a positive integer
     if per_page <= 0:
-        return json.dumps(
-            {"error": "Invalid value for per_page. It must be a positive integer."}
-        )
+        return {"error": "Invalid value for per_page. It must be a positive integer."}
 
     headers = {"Authorization": f"token {credentials['access_token']}"}
 
     # Step 2: Building the commits URL using the SHA
-    url = f"https://api.github.com/repos/{repo}/commits?sha={branch}&per_page={per_page}"
+    url = (
+        f"https://api.github.com/repos/{repo}/commits?sha={branch}&per_page={per_page}"
+    )
 
     if since:
         url += f"&since={since}"
@@ -117,14 +116,26 @@ def get_commits_tool(
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
     except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        # Capture the error message from GitHub's response, if available
+        try:
+            error_details = response.json()  # Try to parse error details from response
+            error_message = error_details.get(
+                "message", str(e)
+            )  # Default to the request error message
+        except json.JSONDecodeError:
+            error_message = str(
+                e
+            )  # Fallback to the generic error message if response isn't JSON
 
+        logger.error(f"GitHub request failed: {error_message}")
+        return {"error": error_message}
+
+    # If successful, proceed to process the commits
     try:
         commits = response.json()
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     commit_list = [
         {
@@ -153,4 +164,4 @@ def get_commits_tool(
     ]
 
     logger.info(f"Found {len(commit_list)} commits for the given request.")
-    return json.dumps({"commits": commit_list, "total_count": len(commit_list)})
+    return {"commits": commit_list, "total_count": len(commit_list)}

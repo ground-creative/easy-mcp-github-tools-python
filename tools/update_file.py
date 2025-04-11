@@ -1,5 +1,4 @@
 import requests
-import json
 import base64
 from typing import Optional
 from typing_extensions import Annotated
@@ -16,12 +15,12 @@ def get_file_sha(repo: str, file_path: str, branch: str, headers: dict) -> str:
     response = requests.get(url, headers=headers)
 
     if response.status_code != 200:
-        logger.error(f"Failed to fetch file details: {response.json().get('message')}")
-        raise Exception(
-            f"Failed to fetch file details: {response.json().get('message')}"
-        )
+        error_message = response.json().get("message", "Unknown error")
+        logger.error(f"Failed to fetch file details: {error_message}")
+        raise Exception(f"Failed to fetch file details: {error_message}")
 
     return response.json()["sha"]
+
 
 @doc_tag("Files")  # Adding the doc_tag decorator
 def update_file_tool(
@@ -33,9 +32,7 @@ def update_file_tool(
     ],
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     commit_message: Annotated[
         Optional[str], Field(description="The commit message for the file update.")
@@ -46,7 +43,7 @@ def update_file_tool(
             description="The branch where the file will be updated (default is 'main')."
         ),
     ] = "main",
-) -> str:
+) -> dict:
     """
     Update an existing file in a specified GitHub repository on a specified branch.
     The repo parameter is required and must be included in the request headers.
@@ -107,15 +104,13 @@ def update_file_tool(
             logger.info(
                 f"File '{file_path}' updated successfully in repository '{repo}' on branch '{branch}'."
             )
-            return json.dumps(
-                {"message": "File updated successfully.", "file_path": file_path}
-            )
+            return {"message": "File updated successfully.", "file_path": file_path}
+
         else:
-            logger.error(f"Failed to update file: {response.json().get('message')}")
-            return json.dumps(
-                {"error": f"Failed to update file: {response.json().get('message')}"}
-            )
+            error_message = response.json().get("message", "Unknown error")
+            logger.error(f"Failed to update file: {error_message}")
+            return {"error": f"Failed to update file: {error_message}"}
 
     except Exception as e:
         logger.error(f"Error occurred: {str(e)}")
-        return json.dumps({"error": str(e)})
+        return {"error": str(e)}

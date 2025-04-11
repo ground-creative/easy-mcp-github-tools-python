@@ -51,29 +51,24 @@ def find_repositories_by_name_tool(
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
+        # Decode and return the search results
         search_results = response.json()
         logger.info(
             f"Found {search_results['total_count']} repositories owned by `{username}` matching query: {query}"
         )
-        return json.dumps(
-            {
-                "repositories": search_results["items"],
-                "total_count": search_results["total_count"],
-            }
-        )
+        return {
+            "repositories": search_results["items"],
+            "total_count": search_results["total_count"],
+        }
+
     except requests.exceptions.RequestException as e:
-        logger.error(f"Search request failed for query {query} by user {username}: {e}")
-        return json.dumps(
-            {
-                "error": f"Search request failed for query {query} by user {username}: {str(e)}"
-            }
-        )
-    except json.JSONDecodeError:
-        logger.error(
-            f"Failed to decode JSON response for query {query} by user {username}"
-        )
-        return json.dumps(
-            {
-                "error": f"Failed to decode JSON response for query {query} by user {username}"
-            }
-        )
+        # Capture and return the GitHub error message
+        try:
+            error_details = response.json()
+            error_message = error_details.get("message", str(e))
+        except json.JSONDecodeError:
+            error_message = str(e)
+
+        logger.error(f"GitHub request failed: {error_message}")
+        return {"error": error_message}

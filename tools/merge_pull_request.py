@@ -15,9 +15,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def merge_pull_request_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     pull_number: Annotated[
         int,
@@ -72,20 +70,29 @@ def merge_pull_request_tool(
     try:
         # Make the API request to merge the pull request
         response = requests.put(url, headers=headers, json=payload)
-        response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        merge_response = response.json()  # Parse the JSON response early
 
-    try:
-        # Parse the JSON response
-        merge_response = response.json()
+        # Raise for HTTP errors after parsing to capture body info in logs
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as http_err:
+        error_message = merge_response.get("message", str(http_err))
+        logger.error(f"HTTP error during PR merge: {error_message}")
+        return {"error": error_message}
+
+    except requests.exceptions.RequestException as req_err:
+        logger.error(f"Request failed: {req_err}")
+        return {"error": f"Request failed: {str(req_err)}"}
+
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
-    # Log the response from merging the pull request
+    # Handle logical error: response is 200 but merge did not happen
+    if not merge_response.get("merged", False):
+        message = merge_response.get("message", "Pull request was not merged.")
+        logger.warning(f"Merge failed logically: {message}")
+        return {"error": message}
+
     logger.info(f"Successfully merged pull request #{pull_number}: {merge_response}")
-
-    # Return the response as a JSON string
-    return json.dumps(merge_response)
+    return merge_response

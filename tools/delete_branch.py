@@ -18,9 +18,7 @@ CONFIRMATION_TOKEN_VALIDITY_DURATION = 5 * 60  # 5 minutes
 def delete_branch_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     branch: Annotated[
         str,
@@ -46,7 +44,7 @@ def delete_branch_tool(
     - confirmation_token (Optional[str]): An optional token to confirm the deletion. If not provided, a token will be generated based on the branch and repository.
 
     Examples Correct Request:
-    
+
     User: "Delete branch new-features for repository owner/repo"
     # Generate confirmation token to use for next request
     Assistant Action: `delete_branch_tool(repo="owner/repo", branch="new-features")`
@@ -57,7 +55,7 @@ def delete_branch_tool(
     Assistant Response: "The branch new-features was deleted successfully."
 
     Examples Incorrect Request:
-    
+
     User: "Delete branch new-features for repository owner/repo"
     Assistant Action: `delete_branch_tool(repo="owner/repo", branch="new-features", confirmation_token="made_up_token")`
     Server Response: Error: Invalid confirmation token. Please provide a valid token to confirm deletion.
@@ -90,13 +88,11 @@ def delete_branch_tool(
         params_string = f"{branch}:{repo}:{int(time.time())}"
         confirmation_token = base64.b64encode(params_string.encode()).decode()
         logger.info(f"Generated confirmation token: {confirmation_token}")
-        return json.dumps(
-            {
-                "message": f"Confirmation required to delete branch '{branch}'. Once confirmed, use the given confirmation_token with the same request parameters.",
-                "confirmation_token": confirmation_token,
-                "action": "confirm_deletion",
-            }
-        )
+        return {
+            "message": f"Confirmation required to delete branch '{branch}'. Once confirmed, use the given confirmation_token with the same request parameters.",
+            "confirmation_token": confirmation_token,
+            "action": "confirm_deletion",
+        }
 
     # Decode and validate the confirmation token
     try:
@@ -106,30 +102,29 @@ def delete_branch_tool(
 
         # Check if the token has expired
         if time.time() - token_timestamp > CONFIRMATION_TOKEN_VALIDITY_DURATION:
-            return json.dumps(
-                {"error": "Confirmation token has expired. Please request a new token."}
-            )
+            return {
+                "error": "Confirmation token has expired. Please request a new token."
+            }
 
         # Check if the parameters match
         if token_repo != repo or token_branch != branch:
-            return json.dumps(
-                {
-                    "error": "Invalid confirmation token. Parameters do not match, please request a new token.",
-                    "details": {
-                        "token_params": {
-                            "branch": token_branch,
-                            "repo": token_repo,
-                        },
-                        "request_params": {
-                            "branch": branch,
-                            "repo": repo,
-                        },
+            return {
+                "error": "Invalid confirmation token. Parameters do not match, please request a new token.",
+                "details": {
+                    "token_params": {
+                        "branch": token_branch,
+                        "repo": token_repo,
                     },
-                }
-            )
+                    "request_params": {
+                        "branch": branch,
+                        "repo": repo,
+                    },
+                },
+            }
+
     except Exception as e:
         logger.error(f"Failed to decode confirmation token: {e}")
-        return json.dumps({"error": "Invalid confirmation token."})
+        return {"error": f"Invalid confirmation token. {str(e)}"}
 
     # Prepare to delete the branch
     url = f"https://api.github.com/repos/{repo}/git/refs/heads/{branch}"
@@ -144,7 +139,20 @@ def delete_branch_tool(
         # Send the request to delete the branch
         response = requests.delete(url, headers=headers)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
-        return json.dumps({"message": f"Branch '{branch}' deleted successfully."})
+
+        # Check the response status and return the result
+        if response.status_code == 204:
+            return {"message": f"Branch '{branch}' deleted successfully."}
+        else:
+            error_message = response.json().get("message", "Unknown error.")
+            return {
+                "error": f"Failed to delete branch '{branch}'. GitHub error: {error_message}"
+            }
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed for branch '{branch}': {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        return {"error": f"Request failed: {str(e)}"}
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to decode GitHub error response: {e}")
+        return {"error": "Failed to decode GitHub error response."}

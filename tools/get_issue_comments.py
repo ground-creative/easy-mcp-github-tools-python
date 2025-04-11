@@ -17,9 +17,7 @@ def get_issue_comments_tool(
     ],
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     page: Annotated[
         Optional[int],
@@ -83,11 +81,15 @@ def get_issue_comments_tool(
         issue_response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
         issue_content = issue_response.json()  # Parse JSON response
     except requests.exceptions.RequestException as e:
+        # Log the error details and GitHub's response content
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        if e.response:
+            # If the exception has a response (i.e., 4xx or 5xx error), include the error message from GitHub
+            logger.error(f"GitHub API Error Response: {e.response.text}")
+        return {"error": f"Request failed: {str(e)}"}
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     # Prepare the URL to get the issue comments with pagination
     comments_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments"
@@ -102,11 +104,15 @@ def get_issue_comments_tool(
         comments_response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
         comments_content = comments_response.json()  # Parse JSON response
     except requests.exceptions.RequestException as e:
+        # Log the error details and GitHub's response content
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        if e.response:
+            # If the exception has a response (i.e., 4xx or 5xx error), include the error message from GitHub
+            logger.error(f"GitHub API Error Response: {e.response.text}")
+        return {"error": f"Request failed: {str(e)}"}
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     # Sort comments if sort and order are provided
     if sort and order:
@@ -118,10 +124,8 @@ def get_issue_comments_tool(
     )
 
     # Combine issue details and comments
-    return json.dumps(
-        {
-            "issue": issue_content,
-            "comments": comments_content,
-            "total_comments": len(comments_content),
-        }
-    )
+    return {
+        "issue": issue_content,
+        "comments": comments_content,
+        "total_comments": len(comments_content),
+    }

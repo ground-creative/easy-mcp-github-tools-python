@@ -16,9 +16,7 @@ def get_issue_details_tool(
     ],
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
 ) -> str:
     """
@@ -61,11 +59,18 @@ def get_issue_details_tool(
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
         issue_content = response.json()  # Parse JSON response
     except requests.exceptions.RequestException as e:
+        # Log the error details and GitHub's response content
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        if hasattr(e, "response") and e.response:
+            # If the exception has a response (i.e., 4xx or 5xx error), include the error message from GitHub
+            logger.error(f"GitHub API Error Response: {e.response.text}")
+            return {"error": f"GitHub API Error: {e.response.text}"}
+        else:
+            # If no response attribute is present, it's likely a connection issue, so just return a general message
+            return {"error": f"Request failed: {str(e)}"}
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     logger.info(f"Retrieved issue details for issue number {issue_number}.")
-    return json.dumps(issue_content)
+    return issue_content

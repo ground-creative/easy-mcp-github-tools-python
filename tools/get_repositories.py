@@ -86,18 +86,26 @@ def get_repositories_tool(
         logger.info(f"Sending request to URL: {url}")
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+
         repositories = response.json()
 
+        # If GitHub response contains an error message, return it directly
+        if "message" in repositories:
+            error_message = repositories["message"]
+            logger.error(f"GitHub API error: {error_message}")
+            return {"error": error_message}
+
         logger.info(f"Fetched {len(repositories)} repositories for user: {username}.")
-        return json.dumps(
-            {"repositories": repositories, "total_count": len(repositories)}
-        )
+        return {"repositories": repositories, "total_count": len(repositories)}
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed for user {username}: {e}")
-        return json.dumps({"error": f"Request failed for user {username}: {str(e)}"})
+        # Directly return the GitHub error response if present
+        error_message = response.json().get(
+            "message", str(e)
+        )  # Get GitHub error message
+        logger.error(f"GitHub error: {error_message}")
+        return {"error": error_message}
+
     except json.JSONDecodeError:
         logger.error(f"Failed to decode JSON response for user {username}")
-        return json.dumps(
-            {"error": f"Failed to decode JSON response for user {username}"}
-        )
+        return {"error": f"Failed to decode JSON response for user {username}"}

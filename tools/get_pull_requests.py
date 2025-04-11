@@ -15,9 +15,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def get_pull_requests_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     state: Annotated[
         Optional[str],
@@ -110,18 +108,14 @@ def get_pull_requests_tool(
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")  # Log the error
-        return json.dumps(
-            {"error": f"Request failed: {str(e)}"}
-        )  # Return the error message
+        return {"error": f"Request failed: {str(e)}"}
 
     try:
         # Parse the JSON response
         pull_requests = response.json()
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")  # Log JSON decoding error
-        return json.dumps(
-            {"error": "Failed to decode JSON response"}
-        )  # Return error message
+        return {"error": "Failed to decode JSON response"}
 
     # Create a list of pull request details to return
     pull_request_list = [
@@ -140,11 +134,7 @@ def get_pull_requests_tool(
     logger.info(f"Found {len(pull_request_list)} pull requests in the repository.")
 
     # Return the list of pull requests as a JSON string
-    return json.dumps(
-        {
-            "data": {
-                "pull_requests": pull_request_list,
-                "total_count": len(pull_request_list),
-            }
-        }
-    )
+    return {
+        "pull_requests": pull_request_list,
+        "total_count": len(pull_request_list),
+    }

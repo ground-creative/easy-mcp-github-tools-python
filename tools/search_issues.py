@@ -13,9 +13,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def search_issues_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     state: Annotated[
         Optional[str],
@@ -136,13 +134,13 @@ def search_issues_tool(
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        return {"error": f"Request failed: {str(e)}"}
 
     try:
         issues = response.json()
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     issue_list = []
     for issue in issues.get("items", []):
@@ -181,11 +179,9 @@ def search_issues_tool(
 
     logger.info(f"Found {len(issue_list)} issues in the repository.")
 
-    return json.dumps(
-        {
-            "data": {
-                "issues": issue_list,
-                "total_count": len(issue_list),
-            }
+    return {
+        "data": {
+            "issues": issue_list,
+            "total_count": len(issue_list),
         }
-    )
+    }

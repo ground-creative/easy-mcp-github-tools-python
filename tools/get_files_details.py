@@ -13,9 +13,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def get_files_details_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     files: Annotated[
         List[str],
@@ -58,46 +56,88 @@ def get_files_details_tool(
         return auth_response
 
     credentials = global_state.get("middleware.GithubAuthMiddleware.credentials", None)
-
     headers = {"Authorization": f"token {credentials['access_token']}"}
-    file_details = []
 
     # If branch is not provided, fetch the default branch name
-    if not branch:
-        branch_url = f"https://api.github.com/repos/{repo}/branches"
-        branch_response = requests.get(branch_url, headers=headers)
+    branch = branch or get_default_branch(repo, headers)
+    if isinstance(branch, dict):  # If the branch is an error response
+        return branch
 
-        if branch_response.status_code != 200:
-            return json.dumps({"error": f"GitHub API error: {branch_response.text}"})
-
-        branch = branch_response.json()[0]["name"]  # Get the default branch name
-
+    # Fetch file details
+    file_details = []
     for file_path in files:
-        url = f"https://api.github.com/repos/{repo}/contents/{file_path}?ref={branch}"
-        logger.info(f"Fetching details for file: {file_path} from URL: {url}")
+        file_metadata = fetch_file_metadata(repo, file_path, branch, headers)
+        if "error" in file_metadata:
+            return file_metadata  # Return error immediately if encountered
 
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
-            file_info = response.json()
-
-            # Create a dictionary with only the necessary metadata
-            file_metadata = {
-                "name": file_info.get("name"),
-                "path": file_info.get("path"),
-                "size": file_info.get("size"),
-                "type": file_info.get("type"),
-                "url": file_info.get("html_url"),
-            }
-            file_details.append(file_metadata)
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Request failed for {file_path}: {e}")
-            return json.dumps({"error": f"Request failed for {file_path}: {str(e)}"})
-        except json.JSONDecodeError:
-            logger.error(f"Failed to decode JSON response for {file_path}")
-            return json.dumps(
-                {"error": f"Failed to decode JSON response for {file_path}"}
-            )
+        file_details.append(file_metadata)
 
     logger.info(f"Fetched details for {len(file_details)} files.")
-    return json.dumps({"file_details": file_details, "total_count": len(file_details)})
+    return {"file_details": file_details, "total_count": len(file_details)}
+
+
+def get_default_branch(repo: str, headers: dict) -> Optional[str]:
+    """
+    Fetch the default branch of the repository.
+
+    Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
+    - headers (dict): Headers containing authentication token.
+
+    Returns:
+    - str: The default branch name or error message.
+    """
+    branch_url = f"https://api.github.com/repos/{repo}/branches"
+    try:
+        branch_response = requests.get(branch_url, headers=headers)
+        branch_response.raise_for_status()
+
+        # Return the default branch name
+        return branch_response.json()[0]["name"]
+    except requests.exceptions.RequestException as e:
+        error_message = f"Request failed for default branch: {e}"
+        logger.error(error_message)
+        return {"error": error_message}
+    except (json.JSONDecodeError, IndexError) as e:
+        error_message = f"Failed to decode or parse default branch response: {e}"
+        logger.error(error_message)
+        return {"error": error_message}
+
+
+def fetch_file_metadata(repo: str, file_path: str, branch: str, headers: dict) -> dict:
+    """
+    Fetch metadata for a single file from the GitHub repository.
+
+    Args:
+    - repo (str): The GitHub repository in the format 'owner/repo'.
+    - file_path (str): The path to the file in the repository.
+    - branch (str): The branch to fetch the file from.
+    - headers (dict): Headers containing authentication token.
+
+    Returns:
+    - dict: File metadata or error message.
+    """
+    url = f"https://api.github.com/repos/{repo}/contents/{file_path}?ref={branch}"
+    logger.info(f"Fetching details for file: {file_path} from URL: {url}")
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+
+        # Create a dictionary with only the necessary metadata
+        file_info = response.json()
+        return {
+            "name": file_info.get("name"),
+            "path": file_info.get("path"),
+            "size": file_info.get("size"),
+            "type": file_info.get("type"),
+            "url": file_info.get("html_url"),
+        }
+    except requests.exceptions.RequestException as e:
+        error_message = f"Request failed for {file_path}: {e}"
+        logger.error(error_message)
+        return {"error": error_message}
+    except json.JSONDecodeError:
+        error_message = f"Failed to decode JSON response for {file_path}"
+        logger.error(error_message)
+        return {"error": error_message}

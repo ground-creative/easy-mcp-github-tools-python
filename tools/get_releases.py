@@ -13,9 +13,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def get_releases_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     per_page: Annotated[
         Optional[int],
@@ -90,13 +88,13 @@ def get_releases_tool(
         response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
-        return json.dumps({"error": f"Request failed: {str(e)}"})
+        return {"error": f"Request failed: {str(e)}"}
 
     try:
         releases = response.json()
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
-        return json.dumps({"error": "Failed to decode JSON response"})
+        return {"error": "Failed to decode JSON response"}
 
     release_list = [
         {
@@ -111,11 +109,7 @@ def get_releases_tool(
 
     logger.info(f"Found {len(release_list)} releases in the repository.")
 
-    return json.dumps(
-        {
-            "data": {
-                "releases": release_list,
-                "total_count": len(release_list),
-            }
-        }
-    )
+    return {
+        "releases": release_list,
+        "total_count": len(release_list),
+    }

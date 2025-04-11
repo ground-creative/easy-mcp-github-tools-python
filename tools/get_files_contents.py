@@ -1,5 +1,4 @@
 import requests
-import json
 import base64
 from typing import List, Optional
 from typing_extensions import Annotated
@@ -14,9 +13,7 @@ from core.utils.tools import doc_tag  # Importing the doc_tag
 def get_files_contents_tool(
     repo: Annotated[
         str,
-        Field(
-            description="The GitHub repository in the format 'owner/repo'."
-        ),
+        Field(description="The GitHub repository in the format 'owner/repo'."),
     ],
     file_paths: Annotated[
         List[str],
@@ -37,7 +34,7 @@ def get_files_contents_tool(
     - file_paths (List[str]): List of file paths to fetch content for. Ex: ['README.md', 'lib/libname/ComponentName.py']
     - branch (Optional[str]): Optional branch name to fetch files from. Defaults to the repository's default branch.
 
-    Example Requests: 
+    Example Requests:
     - Fetching Files from the Default Branch:
       get_files_contents_tool(repo="ground-creative/tcval", file_paths=["README.md", "docs/overview.md", "src/main.dart"])
     - Fetching Files from a Specific Branch:
@@ -74,9 +71,7 @@ def get_files_contents_tool(
     logger.info(f"Successfully fetched content for {len(file_paths)} files.")
 
     # Return the content of the files
-    return json.dumps(
-        {"data": {"file_contents": file_contents, "total_count": len(file_contents)}}
-    )
+    return {"data": {"file_contents": file_contents, "total_count": len(file_contents)}}
 
 
 def fetch_file_content(
@@ -106,8 +101,11 @@ def fetch_file_content(
         response = requests.get(content_url, headers=headers)
 
         if response.status_code != 200:
-            logger.error(f"GitHub API error: {response.text}")
-            return f"Error fetching content for {file_path}: {response.text}"
+            # Capture GitHub API error details
+            error_details = response.json()
+            error_message = error_details.get("message", "Unknown error")
+            logger.error(f"GitHub API error: {error_message}, Details: {error_details}")
+            return f"Error fetching content for {file_path}: {error_message}"
 
         file_data = response.json()
 
@@ -127,6 +125,10 @@ def fetch_file_content(
 
         return file_content  # Return the file content as plain text
 
+    except requests.exceptions.RequestException as e:
+        error_message = f"RequestException fetching content for {file_path}: {str(e)}"
+        logger.error(error_message)
+        return error_message  # Return the error message as plain text
     except Exception as e:
         error_message = f"Error fetching content for {file_path}: {str(e)}"
         logger.error(error_message)
