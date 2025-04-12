@@ -28,7 +28,7 @@ class GithubAuthMiddleware(BaseHTTPMiddleware):
 
             if not access_token:
                 global_state.set(
-                    "error_message",
+                    "middleware.GithubAuthMiddleware.error_message",
                     f"X-ACCESS-TOKEN is a required header parameter. Please go to {EnvConfig.get('APP_HOST')}/auth/login to get the required paramaters.",
                     True,
                 )
@@ -39,20 +39,24 @@ class GithubAuthMiddleware(BaseHTTPMiddleware):
                 cred = self.db_handler.get_credentials(access_token)
             except Exception as e:
                 global_state.set(
-                    "error_message",
+                    "middleware.GithubAuthMiddleware.error_message",
                     f"There has been an error with authenticating, please go to {EnvConfig.get('APP_HOST')}/auth/login and authenticate again",
                     True,
                 )
-                logger.warning("GithubAuthMiddleware: There has been an error with authenticating.")
+                logger.warning(
+                    "GithubAuthMiddleware: There has been an error with authenticating."
+                )
                 return await call_next(request)
 
             if "error" in cred:
                 global_state.set(
-                    "error_message",
+                    "middleware.GithubAuthMiddleware.error_message",
                     f"There has been an error with authenticating, please go to {EnvConfig.get('APP_HOST')}/auth/login and authenticate again",
                     True,
                 )
-                logger.warning("GithubAuthMiddleware: No credentials found. Redirecting to login.")
+                logger.warning(
+                    "GithubAuthMiddleware: No credentials found. Redirecting to login."
+                )
                 return await call_next(request)  # Proceed without authentication
 
             global_state.set(
@@ -68,7 +72,7 @@ class GithubAuthMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error(f"GithubAuthMiddleware: Authentication failed: {str(e)}")
             global_state.set(
-                "error_message",
+                "middleware.GithubAuthMiddleware.error_message",
                 f"There has been an error with authenticating, please go to {EnvConfig.get('APP_HOST')}/auth/login to authenticate",
                 True,
             )
@@ -81,14 +85,13 @@ def check_access(returnJsonOnError=False):
         logger.error("GithubAuthMiddleware: User is not authenticated.")
 
         if returnJsonOnError:
-            return json.dumps(
-                {
-                    "status": "error",
-                    "error": global_state.get(
-                        "error_message", "User is not authenticated."
-                    ),
-                }
-            )
+            return {
+                "status": "error",
+                "error": global_state.get(
+                    "middleware.GithubAuthMiddleware.error_message",
+                    "User is not authenticated.",
+                ),
+            }
 
         return "User is not authenticated."
 
